@@ -4,6 +4,7 @@ from .model import DynamixelModel
 from .packet import DynamixelTXPacket, DynamixelRXPacket
 import time
 from struct import pack_into, unpack_from
+from enum import Enum
 
 
 class TimeoutError(Exception):
@@ -18,7 +19,7 @@ class Dynamixel:
     INS_REBOOT = 8
     TIMEOUT = 225  # milliseconds
 
-    def __init__(self, connector: UART, model: DynamixelModel, id: int = 1, protocol_version: int = 2):
+    def __init__(self, connector: UART, model: Enum, id: int = 1, protocol_version: int = 2):
         self.__connector = connector
         self.__control_table = get_control_table(model)
         self.__id = id
@@ -32,8 +33,8 @@ class Dynamixel:
 
     def __to_signed(self, bytes=4, value=0):
         """Convert unsigned 32-bit value to signed using two's complement."""
-        if value >= 2**(bytes * 8 - 1):
-            value -= 2**(bytes * 8)
+        if value >= 2 ** (bytes * 8 - 1):
+            value -= 2 ** (bytes * 8)
         return value
 
     def __get_addr_length(self, item: int):
@@ -162,7 +163,7 @@ class Dynamixel:
 
     @property
     def led(self) -> bool:
-        return self.__read_value(ControlTableItem.DXL_LED)
+        return True if self.__read_value(ControlTableItem.DXL_LED) else False
 
     @led.setter
     def led(self, value: bool):
@@ -226,7 +227,7 @@ class Dynamixel:
 
     @property
     def torque_enabled(self) -> bool:
-        return self.__read_value(ControlTableItem.TORQUE_ENABLE)
+        return True if self.__read_value(ControlTableItem.TORQUE_ENABLE) else False
 
     @torque_enabled.setter
     def torque_enabled(self, value: bool):
@@ -271,7 +272,7 @@ class Dynamixel:
     @property
     def goal_extend_position(self):
         value = self.__read_value(ControlTableItem.GOAL_POSITION)
-        return self.__to_signed(4, value)   
+        return self.__to_signed(4, value)
 
     @goal_extend_position.setter
     def goal_extend_position(self, value: int):

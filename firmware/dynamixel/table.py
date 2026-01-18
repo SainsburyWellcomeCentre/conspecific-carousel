@@ -3,6 +3,7 @@ Dynamixel Control Table Definitions for MicroPython
 Converted from C/C++ Arduino library
 """
 
+from enum import Enum
 from .model import DynamixelModel
 
 
@@ -538,7 +539,7 @@ Y_CONTROL_TABLE = {
 }
 
 
-def get_control_table(model_num: DynamixelModel) -> dict[int, dict[str, int]]:
+def get_control_table(model_num: Enum) -> dict[int, dict[str, int]]:
     """
     Get control table item information for a specific Dynamixel model
 
