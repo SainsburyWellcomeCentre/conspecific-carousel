@@ -13,7 +13,7 @@ LIMITER_PIN = 28  # GPIO for limiter
 portA = Poke(valve_pin=0, led_pin=3, beambreak_pin=12)
 portB = Poke(valve_pin=1, led_pin=4, beambreak_pin=13)
 portC = Poke(valve_pin=2, led_pin=5, beambreak_pin=14)
-
+led = Pin(INDICATOR_PIN, Pin.OUT)
 
 uart = UART(UART_NUM, baudrate=UART_BAUD, tx=Pin(16), rx=Pin(17))  # Adjust pins if needed
 

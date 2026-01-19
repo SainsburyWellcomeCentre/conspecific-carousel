@@ -11,6 +11,7 @@ class Poke:
         self._beambreak = Pin(beambreak_pin, Pin.IN, Pin.PULL_UP)
         self.isr = Event()
         self._beambreak.irq(lambda pin: self.isr.set(), Pin.IRQ_FALLING | Pin.IRQ_RISING, hard=True)
+        # self._beambreak.irq(lambda pin: print('s'), Pin.IRQ_FALLING | Pin.IRQ_RISING, hard=True)
 
     @property
     def beambreak(self) -> bool:

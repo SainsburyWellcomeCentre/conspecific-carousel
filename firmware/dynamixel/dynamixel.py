@@ -1,11 +1,9 @@
 from machine import UART
 from .table import get_control_table, ControlTableItem
-from .model import DynamixelModel
 from .packet import DynamixelTXPacket, DynamixelRXPacket
 import time
 from struct import pack_into, unpack_from
-from enum import Enum
-
+from .model import DynamixelModel
 
 class TimeoutError(Exception):
     pass
@@ -19,7 +17,7 @@ class Dynamixel:
     INS_REBOOT = 8
     TIMEOUT = 225  # milliseconds
 
-    def __init__(self, connector: UART, model: Enum, id: int = 1, protocol_version: int = 2):
+    def __init__(self, connector: UART, model: DynamixelModel, id: int = 1, protocol_version: int = 2):
         self.__connector = connector
         self.__control_table = get_control_table(model)
         self.__id = id

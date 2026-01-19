@@ -1,7 +1,5 @@
-from enum import Enum
 
-
-class DynamixelModel(Enum):
+class DynamixelModel:
     AX12A = 12
     AX12W = 300
     AX18A = 18
