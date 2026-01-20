@@ -1,6 +1,5 @@
 from machine import Pin
-from asyncio import Event
-
+from utility import EventPin
 
 class Poke:
 
@@ -8,14 +7,7 @@ class Poke:
 
         self._valve = Pin(valve_pin, Pin.OUT)
         self._led = Pin(led_pin, Pin.OUT)
-        self._beambreak = Pin(beambreak_pin, Pin.IN, Pin.PULL_UP)
-        self.isr = Event()
-        self._beambreak.irq(lambda pin: self.isr.set(), Pin.IRQ_FALLING | Pin.IRQ_RISING, hard=True)
-        # self._beambreak.irq(lambda pin: print('s'), Pin.IRQ_FALLING | Pin.IRQ_RISING, hard=True)
-
-    @property
-    def beambreak(self) -> bool:
-        return True if self._beambreak.value() == 1 else False
+        self.beambreak = EventPin(beambreak_pin, Pin.IN, Pin.PULL_UP)
 
     @property
     def led(self) -> bool:

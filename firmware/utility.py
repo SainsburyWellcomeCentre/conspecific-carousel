@@ -1,4 +1,14 @@
 import asyncio
+from machine import Pin
+from asyncio import Event
+
+
+class EventPin(Pin):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.isr = Event()
+        self.irq(lambda pin: self.isr.set(), Pin.IRQ_FALLING | Pin.IRQ_RISING, hard=True)
 
 
 # An Event-like class that can wait on an iterable of Event-like instances.
