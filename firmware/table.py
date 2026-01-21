@@ -16,6 +16,7 @@ class Table:
         self._motor = motor
         self._motor.torque_enabled = False  # Disable torque initially
         self._motor.operating_mode = 5  # Current-based Position Control Mode
+        self._motor.profile_velocity = 40
         self.isr = Event()
         self.iserror = False
         self._ismoving = False
@@ -32,20 +33,20 @@ class Table:
         self._ismoving = value
         self.isr.set()
 
-    async def turn(self, pos: int, dir=0):
+    def turn(self, pos: int, dir=0):
         self._pos = pos * -1 if dir else pos
         self._op_flag.set()
 
     async def _run(self):
         while True:
-            evt = await self._op_flag.wait()
+            await self._op_flag.wait()
             try:
-                await asyncio.wait_for(self._turn(), timeout)
+                await asyncio.wait_for(self._turn(self._pos), timeout)
             except asyncio.TimeoutError:
                 self.iserror = True
                 self.isr.set()
             finally:
-                evt.clear()
+                self._op_flag.clear()
 
     async def _turn(self, pos):
         goal = self._motor.current_position + pos
@@ -53,11 +54,11 @@ class Table:
         self._motor.goal_extend_position = goal
         self.ismoving = True
 
-        if pos > self._motor.current_position:
-            while self._motor.current_position < pos - tolerance:
+        if goal > self._motor.current_position:
+            while self._motor.current_position < goal - tolerance:
                 await asyncio.sleep_ms(50)
         else:
-            while self._motor.current_position > pos + tolerance:
+            while self._motor.current_position > goal + tolerance:
                 await asyncio.sleep_ms(50)
         await self._stop()
 

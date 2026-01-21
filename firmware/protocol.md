@@ -6,8 +6,8 @@
 | ----------------- | ------ | --------------------------------------- |
 | LED/Sync On       | `0x01` | Turn sync_out and LED ON                |
 | LED/Sync Off      | `0x02` | Turn sync_out and LED OFF               |
-| Table Turn CCW 45 | `0x08` | Turn table 2048 steps counter-clockwise |
-| Table Turn CW 45  | `0x09` | Turn table 2048 steps clockwise         |
+| Table Turn CCW 45 | `0x08` | Turn table 45 degrees counter-clockwise |
+| Table Turn CW 45  | `0x09` | Turn table 45 degrees clockwise         |
 | Door Open         | `0x10` | Open the door                           |
 | Door Close        | `0x11` | Close the door                          |
 | Port A LED On     | `0x21` | Turn on Port A LED                      |

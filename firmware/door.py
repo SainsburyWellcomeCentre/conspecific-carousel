@@ -46,7 +46,7 @@ class Door:
 
     async def _run(self):
         while True:
-            evt = await WaitAny(self._close_flag, self._open_flag).wait()
+            evt = await WaitAny((self._close_flag, self._open_flag)).wait()
             op = op_open if evt is self._open_flag else op_close
             try:
                 await asyncio.wait_for(self._spin(op), timeout)

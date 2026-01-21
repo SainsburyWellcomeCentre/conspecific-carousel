@@ -30,24 +30,24 @@ async def event_monitor(txMessages: deque):
             else:
                 txMessages.append(f"Table stopped")
             table.isr.clear()
-        elif evt is portA.isr:
-            if portA.beambreak.value() == 1:
+        elif evt is portA.beambreak.isr:
+            if portA.beambreak.value() == 0:
                 txMessages.append(f"Port A beambreak cleared")
             else:
                 txMessages.append(f"Port A beambreak triggered")
-            portA.isr.clear()
-        elif evt is portB.isr:
-            if portB.beambreak.value() == 1:
+            portA.beambreak.isr.clear()
+        elif evt is portB.beambreak.isr:
+            if portB.beambreak.value() == 0:
                 txMessages.append(f"Port B beambreak cleared")
             else:
                 txMessages.append(f"Port B beambreak triggered")
-            portB.isr.clear()
-        elif evt is portC.isr:
-            if portC.beambreak.value() == 1:
+            portB.beambreak.isr.clear()
+        elif evt is portC.beambreak.isr:
+            if portC.beambreak.value() == 0:
                 txMessages.append(f"Port C beambreak cleared")
             else:
                 txMessages.append(f"Port C beambreak triggered")
-            portC.isr.clear()
+            portC.beambreak.isr.clear()
         elif evt is snsr_door.isr:
             if snsr_door.value() == 1:
                 txMessages.append(f"Door sensor cleared")
@@ -67,23 +67,23 @@ async def event_monitor(txMessages: deque):
             txMessages.append(f"Cam B state: {camB.value()}")
             camB.isr.clear()
 
-async def sender(txMessages: deque):
-    while True:
-        while txMessages:
-            message = txMessages.popleft()
-            sys.stdout.write(message + '\n')
-        await asyncio.sleep(0)
-
-async def receiver(rxMessages: deque):
+async def transceiver(txMessages: deque, rxMessages: deque):
     import uselect
     stream = uselect.poll()
     stream.register(sys.stdin, uselect.POLLIN)
     while True:
-        if stream.poll(0):
+        # Receive messages
+        while stream.poll(0):
             rxMessages.append(sys.stdin.buffer.read(1))
+
+        # Send messages
+        while txMessages:
+            message = txMessages.popleft()
+            sys.stdout.write(message + '\n')
+        
         await asyncio.sleep(0)
 
-async def blink(rxMessages: deque):
+async def processor(rxMessages: deque):
     while True:
         while rxMessages:
             message = rxMessages.popleft()
@@ -134,10 +134,7 @@ async def main():
     rxMessages = deque(bytearray(), RX_LEN)
 
     monitor_task = asyncio.create_task(event_monitor(txMessages))
-    sender_task = asyncio.create_task(sender(txMessages))
-    receiver_task = asyncio.create_task(receiver(rxMessages))
-    blinker = asyncio.create_task(blink(rxMessages))
-    
-    await monitor_task
+    processor_task = asyncio.create_task(processor(rxMessages))
+    transceiver_task = asyncio.create_task(transceiver(txMessages, rxMessages))
 
 asyncio.run(main())
