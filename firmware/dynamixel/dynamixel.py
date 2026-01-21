@@ -333,3 +333,12 @@ class Dynamixel:
     @goal_pwm_rel.setter
     def goal_pwm_rel(self, value: float):
         self.goal_pwm = int(round(self.__to_abs(value, -self.pwm_limit, self.pwm_limit)))
+
+    @property
+    def profile_velocity(self):
+        value = self.__read_value(ControlTableItem.PROFILE_VELOCITY)
+        return value
+
+    @profile_velocity.setter
+    def profile_velocity(self, value: int):
+        self.__write_instruction(ControlTableItem.PROFILE_VELOCITY, value)
