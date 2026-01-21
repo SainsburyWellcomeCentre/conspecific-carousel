@@ -1,85 +1,172 @@
 # Release Notes
 
-> **📝 Template Instructions:** Replace all bracketed placeholders `[like this]` with your project-specific information. Remove sections that don't apply to your project. Delete this instruction block when you're done.
-
-**PCB-1 Version:** [version]  
-**PCB-2 Version:** [version]  
-**Add/remove version for additional PCBs as needed**  
-**Firmware Version:** [version] _(if applicable)_
+**Rat Social Box Extension:** v1.0  
+**Beambreak Array L - Emitter:** v1.0  
+**Beambreak Array L - Receiver:** v1.0  
+**Beambreak Array S - Emitter:** v1.0  
+**Beambreak Array S - Receiver:** v1.0  
+**Firmware Version:** v1.0
 
 ## 🔧 Key Changes
 
-- [Change 1 - describe key update]
-- [Change 2 - describe key update]
-- [Change 3 - describe key update]
-- [Add/remove changes as needed]
+- Initial release of Conspecific Carousel system
+- Integrated door control with Dynamixel servo
+- Rotary table with 45° indexing (8 positions)
+- Three-port nose poke array with beambreak detection
+- Camera synchronization outputs
+- USB serial communication protocol
+- MicroPython-based firmware with async event handling
 
 ## 🛠️ Assembly Instructions
 
-### BOM list
+### BOM List
 
-| Part Number | Description     | Quantity | Supplier     |
-| ----------- | --------------- | -------- | ------------ |
-| [Part 1]    | [Description 1] | [Qty 1]  | [Supplier 1] |
-| [Part 2]    | [Description 2] | [Qty 2]  | [Supplier 2] |
-| [Part 3]    | [Description 3] | [Qty 3]  | [Supplier 3] |
+Refer to individual PCB assembly files in each eCAD subfolder:
 
-### Get the PCBA and 3D Prints
+- [Rat Social Box Extension BOM](eCAD/Rat%20Social%20Box%20Extension/)
+- [Beambreak Array L - Emitter BOM](eCAD/Beambreak%20Array%20L%20-%20Emmiter/)
+- [Beambreak Array L - Receiver BOM](eCAD/Beambreak%20Array%20L%20-%20Receiver/)
+- [Beambreak Array S - Emitter BOM](eCAD/Beambreak%20Array%20S%20-%20Emmiter/)
+- [Beambreak Array S - Receiver BOM](eCAD/Beambreak%20Array%20S%20-%20Receiver/)
 
-> [Instructions for users without in-house fabrication capabilities]
+### Get the PCBA
 
-- **PCBA**: Order from [JLCPCB](https://jlcpcb.com/) (includes assembly service). Refer to the [Bill of Materials (BOM)](eCAD/Assembly/BOM.xlsx) for manual assembly.
-- **3D Prints**: Print the mechanical components using any 3D printing service or in-house printer.
+- **PCBA**: Order from [JLCPCB](https://jlcpcb.com/) (includes assembly service). Refer to the Bill of Materials (BOM) in each PCB's Assembly folder for manual assembly.
+- **3D Prints**: _(If applicable)_ Print mechanical components using any 3D printing service.
 
-See the [JLCPCB Assembly Tutorial]([https://github.com/SainsburyWellcomeCentre/fablabs-documentation/blob/master/jlcpcb_ordering.md]) for step-by-step instructions.
+See the [JLCPCB Assembly Tutorial](https://github.com/SainsburyWellcomeCentre/fablabs-documentation/blob/master/jlcpcb_ordering.md) for step-by-step instructions.
 
-### PCB Fabrication parameters
+### PCB Fabrication Parameters
 
-| Parameter                  | Value                            |
-| -------------------------- | -------------------------------- |
-| Layer Count                | [2/4/6/8]                        |
-| Dimensions                 | [width x height]                 |
-| Delivery Format            | [Single/Panel by JLCPCB]         |
-| PCB Thickness              | [0.6~2.0mm]                      |
-| Material Type              | FR4 TG135                        |
-| Surface Finish             | ENIG                             |
-| Gold Thickness             | 2U"                              |
-| Outer Copper Weight        | 1oz                              |
-| Inner Copper Weight        | [1oz (if applicable)]            |
-| Specify Stackup            | [JLC04161H-7628 (if applicable)] |
-| Impedance Control          | [±10% (if applicable)]           |
-| Via Covering               | [Tented/Epoxy Filled & Capped]   |
-| Min via hole size/diameter | [0.15-0.3mm]                     |
-| Board Outline Tolerance    | ±0.2mm                           |
-| Mark on PCB                | Remove Mark                      |
+**Rat Social Box Extension:**
+
+| Parameter                  | Value           |
+| -------------------------- | --------------- |
+| Layer Count                | 2               |
+| Dimensions                 | 100mm x 80mm    |
+| Delivery Format            | Panel by JLCPCB |
+| PCB Thickness              | 1.6mm           |
+| Material Type              | FR4 TG130       |
+| Surface Finish             | ENIG            |
+| Gold Thickness             | 2U"             |
+| Outer Copper Weight        | 1oz             |
+| Inner Copper Weight        | N/A             |
+| Specify Stackup            | N/A             |
+| Impedance Control          | N/A             |
+| Via Covering               | Tented          |
+| Min via hole size/diameter | 0.3mm           |
+| Board Outline Tolerance    | ±0.2mm          |
+| Mark on PCB                | Remove Mark     |
+
+**Beambreak Array L - Emitter:**
+
+| Parameter                  | Value           |
+| -------------------------- | --------------- |
+| Layer Count                | 2               |
+| Dimensions                 | 50mm x 20mm     |
+| Delivery Format            | Panel by JLCPCB |
+| PCB Thickness              | 1.6mm           |
+| Material Type              | FR4 TG130       |
+| Surface Finish             | ENIG            |
+| Gold Thickness             | 2U"             |
+| Outer Copper Weight        | 1oz             |
+| Inner Copper Weight        | N/A             |
+| Specify Stackup            | N/A             |
+| Impedance Control          | N/A             |
+| Via Covering               | Tented          |
+| Min via hole size/diameter | 0.3mm           |
+| Board Outline Tolerance    | ±0.2mm          |
+| Mark on PCB                | Remove Mark     |
+
+**Beambreak Array L - Receiver:**
+
+| Parameter                  | Value           |
+| -------------------------- | --------------- |
+| Layer Count                | 2               |
+| Dimensions                 | 50mm x 20mm     |
+| Delivery Format            | Panel by JLCPCB |
+| PCB Thickness              | 1.6mm           |
+| Material Type              | FR4 TG130       |
+| Surface Finish             | ENIG            |
+| Gold Thickness             | 2U"             |
+| Outer Copper Weight        | 1oz             |
+| Inner Copper Weight        | N/A             |
+| Specify Stackup            | N/A             |
+| Impedance Control          | N/A             |
+| Via Covering               | Tented          |
+| Min via hole size/diameter | 0.3mm           |
+| Board Outline Tolerance    | ±0.2mm          |
+| Mark on PCB                | Remove Mark     |
+
+**Beambreak Array S - Emitter:**
+
+| Parameter                  | Value           |
+| -------------------------- | --------------- |
+| Layer Count                | 2               |
+| Dimensions                 | 30mm x 10mm     |
+| Delivery Format            | Panel by JLCPCB |
+| PCB Thickness              | 1.6mm           |
+| Material Type              | FR4 TG130       |
+| Surface Finish             | ENIG            |
+| Gold Thickness             | 2U"             |
+| Outer Copper Weight        | 1oz             |
+| Inner Copper Weight        | N/A             |
+| Specify Stackup            | N/A             |
+| Impedance Control          | N/A             |
+| Via Covering               | Tented          |
+| Min via hole size/diameter | 0.3mm           |
+| Board Outline Tolerance    | ±0.2mm          |
+| Mark on PCB                | Remove Mark     |
+
+**Beambreak Array S - Receiver:**
+
+| Parameter                  | Value           |
+| -------------------------- | --------------- |
+| Layer Count                | 2               |
+| Dimensions                 | 30mm x 10mm     |
+| Delivery Format            | Panel by JLCPCB |
+| PCB Thickness              | 1.6mm           |
+| Material Type              | FR4 TG130       |
+| Surface Finish             | ENIG            |
+| Gold Thickness             | 2U"             |
+| Outer Copper Weight        | 1oz             |
+| Inner Copper Weight        | N/A             |
+| Specify Stackup            | N/A             |
+| Impedance Control          | N/A             |
+| Via Covering               | Tented          |
+| Min via hole size/diameter | 0.3mm           |
+| Board Outline Tolerance    | ±0.2mm          |
+| Mark on PCB                | Remove Mark     |
 
 ### Assembly & Installation
 
-1. [First assembly step - be specific about order and technique]
-2. [Second assembly step]
-3. [Third assembly step]
-4. [Installation/connection instructions]
-5. [Connection/wiring instructions]
-6. [Any drilling, laser cutting, modification, or mounting instructions]
+1. Assemble the Rat Social Box Extension PCB first, as it is the main control board.
+2. Connect the Dynamixel servo to the designated header on the Rat Social Box Extension.
+3. Assemble the Beambreak Array PCBs next. Ensure correct orientation of the IR emitters and receivers.
+4. Connect the Beambreak Arrays to the Rat Social Box Extension using the provided connectors.
+5. Install the rotary table onto the Rat Social Box Extension, ensuring it can rotate freely.
+6. Attach the camera module to the designated mount, if applicable.
+7. Finally, enclose the assembly in the provided casing, ensuring all components are securely fitted.
 
-   [If applicable] Use `drill-template].dxf` or refer to the manual dimensions below:
+   Use `drill-template].dxf` or refer to the manual dimensions below:
 
    <p align="center">
        <img src="./img/[assembly-diagram].png" alt="[Assembly Description]" height="500"/>
    </p>
 
-7. [Final assembly steps and testing]
+8. Test the assembly by powering on the Rat Social Box Extension and checking for correct operation of the servo, beambreak arrays, and rotary table.
 
 ## ⚙️ Configuration & Tuning _(if applicable)_
 
-[If your project requires calibration or fine-tuning, describe the process here]
+- Configure the USB serial settings to match the host computer.
+- Calibrate the beambreak arrays by adjusting the sensitivity settings in the firmware.
+- Test the camera synchronization output with the connected camera system.
 
 ## 🔧 [Configuration/Calibration] Guidelines
 
-- [Step 1 - describe calibration procedure]
-- [Step 2 - describe parameter adjustment]
-- [Operating ranges and recommended settings]
-  > [Important notes or warnings about configuration]
+- Adjust the Dynamixel servo ID and baud rate in the firmware to match your specific servo model.
+- Fine-tune the rotary table indexing by modifying the stepper motor parameters in the firmware.
+- Set the correct number of positions (8 for 45° indexing) in the firmware configuration.
 
 <div align="center">
   <img src=".img/[configuration-image].png" alt="[Configuration Description]" width="600"/>
@@ -87,16 +174,16 @@ See the [JLCPCB Assembly Tutorial]([https://github.com/SainsburyWellcomeCentre/f
 
 ## 💻 Firmware Upload _(if applicable)_
 
-[Instructions for uploading firmware to the device]
-
-1. [Step 1 - preparation]
-2. [Step 2 - connection]
-3. [Step 3 - upload process]
+1. Connect the Rat Social Box Extension to your computer via USB.
+2. Put the device in firmware upload mode by connecting the designated boot pins.
+3. Use a compatible flashing tool (e.g., `esptool.py` for ESP32) to upload the firmware binary.
+4. Monitor the upload process for any errors.
+5. Once completed, disconnect and reconnect the device to exit boot mode.
 
 ## 📁 Attachement
 
 ```bash
-├── PCB-1.zip                    # Electronic CAD files
+├── Rat Social Box Extension.zip                    # Electronic CAD files
 │   ├── Assembly/
 │   │   ├── BOM.xlsx         # Bill of Materials
 │   │   └── pick and place.csv
@@ -106,7 +193,37 @@ See the [JLCPCB Assembly Tutorial]([https://github.com/SainsburyWellcomeCentre/f
 │   ├── Fabrication/
 │   │   ├── Gerber/         # PCB fabrication files
 │   │   └── NC Drill/       # Drill files
-├── PCB-2.zip                    # Electronic CAD files
+├── Beambreak Array L - Emitter.zip                    # Electronic CAD files
+│   ├── Assembly/
+│   │   ├── BOM.xlsx         # Bill of Materials
+│   │   └── pick and place.csv
+│   ├── Drawing/
+│   │   ├── 2d.dxf          # 2D technical drawings
+│   │   └── 3d.step         # 3D models
+│   ├── Fabrication/
+│   │   ├── Gerber/         # PCB fabrication files
+│   │   └── NC Drill/       # Drill files
+├── Beambreak Array L - Receiver.zip                    # Electronic CAD files
+│   ├── Assembly/
+│   │   ├── BOM.xlsx         # Bill of Materials
+│   │   └── pick and place.csv
+│   ├── Drawing/
+│   │   ├── 2d.dxf          # 2D technical drawings
+│   │   └── 3d.step         # 3D models
+│   ├── Fabrication/
+│   │   ├── Gerber/         # PCB fabrication files
+│   │   └── NC Drill/       # Drill files
+├── Beambreak Array S - Emitter.zip                    # Electronic CAD files
+│   ├── Assembly/
+│   │   ├── BOM.xlsx         # Bill of Materials
+│   │   └── pick and place.csv
+│   ├── Drawing/
+│   │   ├── 2d.dxf          # 2D technical drawings
+│   │   └── 3d.step         # 3D models
+│   ├── Fabrication/
+│   │   ├── Gerber/         # PCB fabrication files
+│   │   └── NC Drill/       # Drill files
+├── Beambreak Array S - Receiver.zip                    # Electronic CAD files
 │   ├── Assembly/
 │   │   ├── BOM.xlsx         # Bill of Materials
 │   │   └── pick and place.csv
