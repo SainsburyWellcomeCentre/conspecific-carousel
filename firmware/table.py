@@ -16,6 +16,7 @@ class Table:
         self._motor = motor
         self._motor.torque_enabled = False  # Disable torque initially
         self._motor.operating_mode = 5  # Current-based Position Control Mode
+        self._motor.current_limit = 500
         self._motor.profile_velocity = 40
         self.isr = Event()
         self.iserror = False

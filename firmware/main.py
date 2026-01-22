@@ -137,4 +137,5 @@ async def main():
     processor_task = asyncio.create_task(processor(rxMessages))
     transceiver_task = asyncio.create_task(transceiver(txMessages, rxMessages))
 
+    await asyncio.gather(monitor_task, processor_task, transceiver_task)
 asyncio.run(main())
