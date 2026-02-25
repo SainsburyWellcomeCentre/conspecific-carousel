@@ -155,7 +155,7 @@ class Dynamixel:
 
             self.__connector.write(msg.buffer)
             self.__connector.flush()
-            time.sleep(0.02)  # Small delay to allow data to be sent
+            time.sleep(0.04)  # Small delay to allow data to be sent
         except Exception as e:
             print(f"Error in __write: {e}")
 

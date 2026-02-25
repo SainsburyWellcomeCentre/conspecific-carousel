@@ -4,7 +4,7 @@ from micropython import const
 import asyncio
 
 
-tolerance = const(50)
+tolerance = const(30)
 timeout = const(5000)
 one_eighth = const(2048)
 

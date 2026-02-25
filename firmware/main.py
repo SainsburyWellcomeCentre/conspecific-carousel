@@ -49,13 +49,13 @@ async def event_monitor(txMessages: deque):
                 txMessages.append(f"Port C beambreak triggered")
             portC.beambreak.isr.clear()
         elif evt is snsr_door.isr:
-            if snsr_door.value() == 1:
+            if snsr_door.value() == 0:
                 txMessages.append(f"Door sensor cleared")
             else:
                 txMessages.append(f"Door sensor triggered")
             snsr_door.isr.clear()
         elif evt is snsr_table.isr:
-            if snsr_table.value() == 1:
+            if snsr_table.value() == 0:
                 txMessages.append(f"Table sensor cleared")
             else:
                 txMessages.append(f"Table sensor triggered")
@@ -118,14 +118,26 @@ async def processor(rxMessages: deque):
                 portB.valve=True
             elif msg == 0x28:
                 portB.valve=False            
-            elif msg == 0x25:
+            elif msg == 0x29:
                 portC.led=True
-            elif msg == 0x26:
+            elif msg == 0x2A:
                 portC.led=False
-            elif msg == 0x27:
+            elif msg == 0x2B:
                 portC.valve=True
-            elif msg == 0x28:
-                portC.valve=False     
+            elif msg == 0x2C:
+                portC.valve=False
+            elif msg == 0x2D:
+                table.turn(4096, dir=0)
+            elif msg == 0x2E:
+                table.turn(4096, dir=1)
+            elif msg == 0x2F:
+                table.turn(8192, dir=0)
+            elif msg == 0x30:
+                table.turn(8192, dir=1)
+            elif msg == 0x31:
+                table.turn(12288, dir=0)
+            elif msg == 0x32:
+                table.turn(12288, dir=1)
         await asyncio.sleep(0)
 
 async def main():

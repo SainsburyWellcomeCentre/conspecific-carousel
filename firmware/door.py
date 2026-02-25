@@ -13,7 +13,7 @@ tolerance = const(50)
 timeout = const(5)
 
 length_rat = const(7200)  # Default length in encoder units
-length_mice = const(0)    # Default direction
+length_mice = const(-3700) # Default length in encoder units
 
 rat_setting = const(0)
 mice_setting = const(1)
@@ -46,10 +46,12 @@ class Door:
         return op_close if self._isclosed else op_open
 
     def open(self):
-        self._open_flag.set()
+        if self.status == op_close:
+            self._open_flag.set()
 
     def close(self):
-        self._close_flag.set()
+        if self.status == op_open:
+            self._close_flag.set()
 
     async def _run(self):
         while True:
