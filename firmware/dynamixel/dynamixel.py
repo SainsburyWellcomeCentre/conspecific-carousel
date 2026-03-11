@@ -5,6 +5,7 @@ import time
 from struct import pack_into, unpack_from
 from .model import DynamixelModel
 
+
 class TimeoutError(Exception):
     pass
 

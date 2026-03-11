@@ -6,7 +6,7 @@ from door import Door, rat_setting, mice_setting
 from table import Table
 import micropython
 
-micropython.kbd_intr(-1)
+# micropython.kbd_intr(-1)
 
 
 UART_BAUD = 57600  # Baud rate for hardware UART
@@ -31,6 +31,10 @@ led = Pin(INDICATOR_PIN, Pin.OUT, value=0)  # Indicator LED
 
 uart = UART(UART_NUM, baudrate=UART_BAUD, tx=Pin(16), rx=Pin(17))  # Adjust pins if needed
 
-door = Door(motor=Dynamixel(uart, model=DynamixelModel.XL430_W250, id=1, protocol_version=2), limiter_pin=LIMITER_PIN, setting=rat_setting) # Door configuration, change setting to mice_setting if needed
+door = Door(
+    motor=Dynamixel(uart, model=DynamixelModel.XL430_W250, id=1, protocol_version=2),
+    limiter_pin=LIMITER_PIN,
+    setting=rat_setting,
+)  # Door configuration, change setting to mice_setting if needed
 
 table = Table(motor=Dynamixel(uart, model=DynamixelModel.XM430_W350, id=2, protocol_version=2))
