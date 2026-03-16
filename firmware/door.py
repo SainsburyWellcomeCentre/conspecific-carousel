@@ -17,7 +17,7 @@ max_vel = const(50)
 
 length_rat = const(7200)  # Default length in encoder units
 length_mice = const(-3700)  # Default length in encoder units
-
+length_gap = const(500)  # Additional length for mice setting in encoder units
 rat_setting = const(0)
 mice_setting = const(1)
 
@@ -37,6 +37,11 @@ class Door:
         self._isclosed = True
         self._closed_pos = self._motor.current_position
         length = length_mice if setting == mice_setting else length_rat
+
+        if setting == mice_setting:
+            self._closed_pos -= length_gap
+            length += length_gap
+
         self._open_pos = self._closed_pos + length
         self._ismoving = False
         self._open_flag = Event()
@@ -59,11 +64,13 @@ class Door:
     def open(self):
         if self.status == op_close:
             self.target_pos = self._open_pos
+            self._motor.profile_velocity = int(max_vel * 2)
             self._open_flag.set()
 
     def close(self):
         if self.status == op_open:
             self.target_pos = self._closed_pos
+            self._motor.profile_velocity = max_vel
             self._close_flag.set()
 
     async def _run(self):
