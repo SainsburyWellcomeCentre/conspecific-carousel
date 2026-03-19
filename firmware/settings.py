@@ -9,7 +9,7 @@ import micropython
 # micropython.kbd_intr(-1)
 
 
-UART_BAUD = 57600  # Baud rate for hardware UART
+UART_BAUD = 1_000_000  # Baud rate for hardware UART
 UART_NUM = 0  # Use UART0
 INDICATOR_PIN = 25  # GPIO for indicator LED
 LIMITER_PIN = 28  # GPIO for limiter
