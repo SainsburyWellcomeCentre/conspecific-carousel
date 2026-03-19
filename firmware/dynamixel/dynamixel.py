@@ -16,7 +16,7 @@ class Dynamixel:
     INS_WRITE = 3
     INS_FACTORY_RESET = 6
     INS_REBOOT = 8
-    TIMEOUT = 225  # milliseconds
+    TIMEOUT = 5000  # microseconds
 
     def __init__(self, connector: UART, model: DynamixelModel, id: int = 1, protocol_version: int = 2):
         self.__connector = connector
@@ -61,33 +61,26 @@ class Dynamixel:
             rx = DynamixelRXPacket(self.__ver)
             length_to_read = rx.LENGTH_BYTE
 
-            time.sleep(0.01)  # Small delay to allow data to arrive
-
-            t_start = time.ticks_ms()
-            while length_to_read > 0:
-                if time.ticks_diff(time.ticks_ms(), t_start) > self.TIMEOUT:
+            t_start = time.ticks_us()
+            while self.__connector.any() < length_to_read:
+                if time.ticks_diff(time.ticks_us(), t_start) > self.TIMEOUT:
                     raise TimeoutError("No response from the Dynamixel motor.")
-                data = self.__connector.read(1)
-                if data is not None:
-                    rx.buffer.extend(data)
-                    length_to_read -= 1
 
-            time.sleep(0.01)  # Small delay to allow data to arrive
+            data = self.__connector.read(length_to_read)
+            if data is not None:
+                rx.buffer.extend(data)
+
             length_to_read = rx.length
 
-            t_start = time.ticks_ms()
-            while length_to_read > 0:
-                if time.ticks_diff(time.ticks_ms(), t_start) > self.TIMEOUT:
-                    raise TimeoutError("Timeout while reading parameter data from Dynamixel motor.")
-                data = self.__connector.read(1)
-                if data is not None:
-                    rx.buffer.extend(data)
-                    length_to_read -= 1
+            data = self.__connector.read(length_to_read)
+            if data is not None:
+                rx.buffer.extend(data)
 
             if not rx.has_valid_checksum():
                 raise ValueError("Invalid checksum in response packet.")
 
             return rx.param
+
         except TimeoutError as e:
             print(f"Timeout error: {e}")
             return None
@@ -108,11 +101,18 @@ class Dynamixel:
         else:
             raise ValueError("Unsupported data length.")
 
-    def __read_value(self, item: int):
+    def __read_value(self, item: int, retries: int = 3):
         try:
             _, length_of_data = self.__get_addr_length(item)
             data_fmt = self.__length_to_fmt(length_of_data)
-            param = self.__read(item)
+            param = None
+            for _ in range(retries):
+                param = self.__read(item)
+                if param is not None and len(param) > 0:
+                    break
+                # print(f"Retry {attempt + 1}/{retries} for item {item}")
+            if param is None or len(param) == 0:
+                return 0
             return unpack_from("<" + data_fmt, param, 0)[0]
         except Exception as e:
             print(f"Error in __read_value: {e}")
@@ -156,7 +156,7 @@ class Dynamixel:
 
             self.__connector.write(msg.buffer)
             self.__connector.flush()
-            time.sleep(0.04)  # Small delay to allow data to be sent
+            # time.sleep(0.04)  # Small delay to allow data to be sent
         except Exception as e:
             print(f"Error in __write: {e}")
 
