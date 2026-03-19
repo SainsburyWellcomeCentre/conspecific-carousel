@@ -30,9 +30,12 @@ class WaitAny:
         return self.trig_event
 
     async def wt(self, event):
-        await event.wait()
-        self.evt.set()
-        self.trig_event = event
+        try:
+            await event.wait()
+            self.evt.set()
+            self.trig_event = event
+        except asyncio.CancelledError:
+            pass
 
     def event(self):
         return self.trig_event
