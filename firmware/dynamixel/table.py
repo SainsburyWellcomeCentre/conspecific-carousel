@@ -538,7 +538,7 @@ Y_CONTROL_TABLE = {
 }
 
 
-def get_control_table(model_num: DynamixelModel) -> dict[int, dict[str, int]]:
+def get_control_table(model_num: int) -> dict[int, dict[str, int]]:
     """
     Get control table item information for a specific Dynamixel model
 

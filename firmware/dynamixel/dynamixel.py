@@ -11,16 +11,22 @@ class TimeoutError(Exception):
 
 
 class Dynamixel:
-
+    INS_PING = 1
     INS_READ = 2
     INS_WRITE = 3
+    INS_ACK = 85
     INS_FACTORY_RESET = 6
     INS_REBOOT = 8
     TIMEOUT = 5000  # microseconds
 
-    def __init__(self, connector: UART, model: DynamixelModel, id: int = 1, protocol_version: int = 2):
+    _FMT = {1: "B", 2: "H", 4: "I"}
+
+    def __init__(
+        self, connector: UART, model: int = DynamixelModel.UNKNOWN, id: int = 1, protocol_version: int = 2
+    ):
         self.__connector = connector
-        self.__control_table = get_control_table(model)
+        if model != DynamixelModel.UNKNOWN:
+            self.__control_table = get_control_table(model)
         self.__id = id
         self.__ver = protocol_version
 
@@ -31,9 +37,10 @@ class Dynamixel:
         return value * (max - min) + min
 
     def __to_signed(self, bytes=4, value=0):
-        """Convert unsigned 32-bit value to signed using two's complement."""
-        if value >= 2 ** (bytes * 8 - 1):
-            value -= 2 ** (bytes * 8)
+        """Convert unsigned value to signed using two's complement."""
+        bits = bytes << 3
+        if value >= (1 << (bits - 1)):
+            value -= 1 << bits
         return value
 
     def __get_addr_length(self, item: int):
@@ -53,67 +60,76 @@ class Dynamixel:
         except Exception as e:
             print(f"Error in __clear_buffer: {e}")
 
-    def __read(self, item: int):
+    def __read_buffer(self, log_errors: bool = True) -> DynamixelRXPacket | None:
         try:
-            self.__clear_buffer()
-            self.__read_instruction(item)
-
             rx = DynamixelRXPacket(self.__ver)
             length_to_read = rx.LENGTH_BYTE
+            conn = self.__connector
+            timeout = self.TIMEOUT
+            ticks_us = time.ticks_us
+            ticks_diff = time.ticks_diff
 
-            t_start = time.ticks_us()
-            while self.__connector.any() < length_to_read:
-                if time.ticks_diff(time.ticks_us(), t_start) > self.TIMEOUT:
+            t_start = ticks_us()
+            while conn.any() < length_to_read:
+                if ticks_diff(ticks_us(), t_start) > timeout:
                     raise TimeoutError("No response from the Dynamixel motor.")
 
-            data = self.__connector.read(length_to_read)
+            data = conn.read(length_to_read)
             if data is not None:
                 rx.buffer.extend(data)
 
             length_to_read = rx.length
 
-            data = self.__connector.read(length_to_read)
+            t_start = ticks_us()
+            while conn.any() < length_to_read:
+                if ticks_diff(ticks_us(), t_start) > timeout:
+                    raise TimeoutError("Incomplete response from the Dynamixel motor.")
+
+            data = conn.read(length_to_read)
             if data is not None:
                 rx.buffer.extend(data)
 
             if not rx.has_valid_checksum():
                 raise ValueError("Invalid checksum in response packet.")
-
-            return rx.param
-
+            return rx
         except TimeoutError as e:
-            print(f"Timeout error: {e}")
+            if log_errors:
+                print(f"Timeout error: {e}")
             return None
         except ValueError as e:
-            print(f"Value error: {e}")
+            if log_errors:
+                print(f"Value error: {e}")
             return None
         except Exception as e:
-            print(f"Unexpected error in __read: {e}")
+            if log_errors:
+                print(f"Unexpected error in __read: {e}")
             return None
 
+    def __read(self, item: int):
+
+        self.__clear_buffer()
+        self.__read_instruction(item)
+
+        rx = self.__read_buffer()
+        if rx is None:
+            return None
+        return rx.param
+
     def __length_to_fmt(self, length: int):
-        if length == 1:
-            return "B"
-        elif length == 2:
-            return "H"
-        elif length == 4:
-            return "I"
-        else:
+        fmt = self._FMT.get(length)
+        if fmt is None:
             raise ValueError("Unsupported data length.")
+        return fmt
 
     def __read_value(self, item: int, retries: int = 3):
         try:
             _, length_of_data = self.__get_addr_length(item)
-            data_fmt = self.__length_to_fmt(length_of_data)
-            param = None
+            fmt = "<" + self.__length_to_fmt(length_of_data)
             for _ in range(retries):
                 param = self.__read(item)
                 if param is not None and len(param) > 0:
-                    break
-                # print(f"Retry {attempt + 1}/{retries} for item {item}")
-            if param is None or len(param) == 0:
-                return 0
-            return unpack_from("<" + data_fmt, param, 0)[0]
+                    return unpack_from(fmt, param, 0)[0]
+            return 0
         except Exception as e:
             print(f"Error in __read_value: {e}")
             return 0
@@ -121,11 +137,21 @@ class Dynamixel:
     def __write_instruction(self, item: int, data):
         try:
             address, length_of_data = self.__get_addr_length(item)
-            data_fmt = self.__length_to_fmt(length_of_data)
+            fmt = "<" + self.__length_to_fmt(length_of_data)
             param = bytearray(length_of_data + 2)
             pack_into("<H", param, 0, address)
-            pack_into("<" + data_fmt, param, 2, data)
+            pack_into(fmt, param, 2, data)
+
+            self.__clear_buffer()
             self.__write(self.INS_WRITE, param)
+
+            ack = self.__read_buffer()  # Read the status packet to clear the buffer
+
+            if ack is None:
+                raise ValueError("No ACK received after write instruction.")
+            if ack.instruction != self.INS_ACK:
+                raise ValueError(f"Unexpected instruction in ACK packet: {ack.instruction}")
+
         except Exception as e:
             print(f"Error in __write_instruction: {e}")
 
@@ -156,13 +182,33 @@ class Dynamixel:
 
             self.__connector.write(msg.buffer)
             self.__connector.flush()
-            # time.sleep(0.04)  # Small delay to allow data to be sent
+
         except Exception as e:
             print(f"Error in __write: {e}")
 
+    def ping(self, baudrate: int, id: int = 254):
+        self.__connector.init(baudrate=baudrate, bits=8, parity=None, stop=1)
+        self.__id = id  # Reset ID to default for pinging
+        self.__write(self.INS_PING, bytearray([0x01]))  # Dummy read to trigger response
+
+        rx = self.__read_buffer(log_errors=False)
+        if rx is None:
+            return False
+        data = rx.param[:-1]
+
+        model = unpack_from("<H", data, 0)[0]
+        self.__control_table = get_control_table(model)
+        self.__id = rx.id
+        return True
+
+    def reset(self):
+        self.__write(self.INS_FACTORY_RESET, bytearray([0xFF]))
+        time.sleep(0.1)  # Wait for the motor to reset
+        self.__clear_buffer()  # Clear any response from the reset
+
     @property
     def led(self) -> bool:
-        return True if self.__read_value(ControlTableItem.DXL_LED) else False
+        return bool(self.__read_value(ControlTableItem.DXL_LED))
 
     @led.setter
     def led(self, value: bool):
@@ -226,7 +272,7 @@ class Dynamixel:
 
     @property
     def torque_enabled(self) -> bool:
-        return True if self.__read_value(ControlTableItem.TORQUE_ENABLE) else False
+        return bool(self.__read_value(ControlTableItem.TORQUE_ENABLE))
 
     @torque_enabled.setter
     def torque_enabled(self, value: bool):
@@ -337,8 +383,7 @@ class Dynamixel:
 
     @property
     def profile_velocity(self):
-        value = self.__read_value(ControlTableItem.PROFILE_VELOCITY)
-        return value
+        return self.__read_value(ControlTableItem.PROFILE_VELOCITY)
 
     @profile_velocity.setter
     def profile_velocity(self, value: int):
