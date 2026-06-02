@@ -17,7 +17,7 @@ max_vel = const(50)
 
 length_rat = const(7200)  # Default length in encoder units
 length_mice = const(-3700)  # Default length in encoder units
-length_gap = const(500)  # Additional length for mice setting in encoder units
+length_gap = const(800)  # Additional length for mice setting in encoder units
 rat_setting = const(0)
 mice_setting = const(1)
 
@@ -48,6 +48,7 @@ class Door:
         self._task = None
         self.target_pos = self._closed_pos
         self.running = False
+        self.interlock = True
 
     @property
     def status(self) -> int:

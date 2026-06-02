@@ -23,6 +23,7 @@ class Table:
         self.target_pos = self._motor.current_position
         self._task = None
         self.ismoving = False
+        self.interlock = True
 
     def turn(self, pos: int, dir=0):
         pos = pos * -1 if dir else pos
