@@ -1,0 +1,250 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Conspecific Carousel Controller</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- CONNECTION BAR -->
+<div id="conn-bar">
+  <label>Port:
+    <select id="port-sel" style="width:140px"></select>
+  </label>
+  <button id="btn-refresh-ports" title="Refresh port list">&#8635;</button>
+
+  <label>Baud:
+    <select id="baud-sel">
+      <option>9600</option><option>19200</option><option>38400</option>
+      <option>57600</option><option>115200</option><option>250000</option>
+      <option value="1000000" selected>1000000</option>
+      <option>2000000</option>
+    </select>
+  </label>
+
+  <button id="btn-connect">Connect</button>
+  <button id="btn-disconnect" disabled>Disconnect</button>
+  <button id="btn-refresh-all">Refresh All</button>
+  <button id="btn-plot-log">Plot Log</button>
+
+  <span id="conn-status">&#9679; Disconnected</span>
+</div>
+
+<!-- MAIN AREA -->
+<div id="main">
+
+  <!-- LEFT: COMMANDS -->
+  <div class="panel">
+    <div class="panel-title">Commands</div>
+    <div class="panel-body">
+
+      <!-- LED / Door / Table -->
+      <div class="card-row">
+
+        <!-- LED/Sync -->
+        <div class="card">
+          <div class="card-title">LED / Sync</div>
+          <div class="toggle-wrap">
+            <label class="toggle">
+              <input type="checkbox" id="tog-ledsync">
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+
+        <!-- Door -->
+        <div class="card">
+          <div class="card-title">Door</div>
+          <div class="card-row2">
+            <button data-reg="0x11" data-val="0x00">Open</button>
+            <button data-reg="0x11" data-val="0x01">Close</button>
+            <button data-reg="0x11" data-val="0x02">Stop</button>
+          </div>
+          <div class="card-kv">
+            <span>Status:</span>
+            <span class="status-val" data-reg="0x10">--</span>
+          </div>
+          <div class="card-kv">
+            <span>Sensor:</span>
+            <span class="status-val" data-reg="0x02">--</span>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="card">
+          <div class="card-title">Table</div>
+          <div class="card-row2">
+            <label>Dir:
+              <select id="tbl-dir" style="width:70px">
+                <option>CW</option><option>CCW</option>
+              </select>
+            </label>
+            <label>Steps:
+              <input id="tbl-steps" type="number" min="1" max="127" value="1" style="width:54px">
+            </label>
+            <button id="btn-table-turn">Turn</button>
+          </div>
+          <div class="card-kv">
+            <span>Status:</span>
+            <span class="status-val" data-reg="0x18">--</span>
+          </div>
+          <div class="card-kv">
+            <span>Sensor:</span>
+            <span class="status-val" data-reg="0x03">--</span>
+          </div>
+        </div>
+
+      </div><!-- .card-row -->
+
+      <!-- Ports A / B / C -->
+      <div class="section-label">Ports</div>
+      <div class="card-row">
+
+        <div class="card">
+          <div class="card-title">Port A</div>
+          <div class="card-row2">
+            <span style="font-size:11px;color:var(--text-dim);min-width:40px">LED</span>
+            <label class="toggle"><input type="checkbox" data-reg="0x21"><span class="slider"></span></label>
+          </div>
+          <div class="card-row2">
+            <span style="font-size:11px;color:var(--text-dim);min-width:40px">Valve</span>
+            <label class="toggle"><input type="checkbox" data-reg="0x22"><span class="slider"></span></label>
+          </div>
+          <div class="card-kv">
+            <span>IR:</span>
+            <span class="status-val" data-reg="0x23">--</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Port B</div>
+          <div class="card-row2">
+            <span style="font-size:11px;color:var(--text-dim);min-width:40px">LED</span>
+            <label class="toggle"><input type="checkbox" data-reg="0x24"><span class="slider"></span></label>
+          </div>
+          <div class="card-row2">
+            <span style="font-size:11px;color:var(--text-dim);min-width:40px">Valve</span>
+            <label class="toggle"><input type="checkbox" data-reg="0x25"><span class="slider"></span></label>
+          </div>
+          <div class="card-kv">
+            <span>IR:</span>
+            <span class="status-val" data-reg="0x26">--</span>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">Port C</div>
+          <div class="card-row2">
+            <span style="font-size:11px;color:var(--text-dim);min-width:40px">LED</span>
+            <label class="toggle"><input type="checkbox" data-reg="0x27"><span class="slider"></span></label>
+          </div>
+          <div class="card-row2">
+            <span style="font-size:11px;color:var(--text-dim);min-width:40px">Valve</span>
+            <label class="toggle"><input type="checkbox" data-reg="0x28"><span class="slider"></span></label>
+          </div>
+          <div class="card-kv">
+            <span>IR:</span>
+            <span class="status-val" data-reg="0x29">--</span>
+          </div>
+        </div>
+
+      </div><!-- .card-row -->
+
+      <!-- Camera -->
+      <div class="section-label">Camera</div>
+      <div class="card">
+        <div class="card-row2">
+          <div class="card-kv" style="margin-bottom:0;margin-right:20px">
+            <span>Cam A:</span>
+            <span class="status-val" data-reg="0x04">--</span>
+          </div>
+          <div class="card-kv" style="margin-bottom:0">
+            <span>Cam B:</span>
+            <span class="status-val" data-reg="0x05">--</span>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- .panel-body -->
+  </div><!-- .panel -->
+
+  <!-- RIGHT: CONDITIONS + TASKS -->
+  <div class="panel" id="right-panel">
+    <div class="panel-title">Conditions &amp; Tasks</div>
+    <div class="panel-body">
+
+      <!-- Conditions sub-panel -->
+      <div class="sub-panel">
+        <div class="sub-title">Conditions</div>
+        <div class="file-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:32px">On</th>
+                <th>File</th>
+                <th>Name</th>
+                <th>When</th>
+                <th>Then</th>
+              </tr>
+            </thead>
+            <tbody id="cond-tbody"></tbody>
+          </table>
+        </div>
+        <div class="file-buttons">
+          <button id="btn-cond-import">Import</button>
+          <button id="btn-cond-delete">Delete</button>
+        </div>
+      </div>
+
+      <!-- Tasks sub-panel -->
+      <div class="sub-panel">
+        <div class="sub-title">Tasks</div>
+        <div class="file-table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>File</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="task-tbody"></tbody>
+          </table>
+        </div>
+        <div class="file-buttons">
+          <button id="btn-task-import">Import</button>
+          <button id="btn-task-run">Run</button>
+          <button id="btn-task-delete">Delete</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div><!-- #main -->
+
+<!-- EVENT LOG -->
+<div id="log-bar">
+  <div class="panel-title">Event Log</div>
+  <div id="log-text"></div>
+</div>
+
+<!-- PLOT LOG MODAL -->
+<div id="plot-modal" class="modal-overlay">
+  <div class="modal" style="width:min(900px,96vw)">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <h3 id="plot-title">Log Plot</h3>
+      <button id="btn-plot-close" class="btn-secondary">&#10005; Close</button>
+    </div>
+    <div id="plot-filters"></div>
+    <div id="chart-wrap">
+      <canvas id="log-chart"></canvas>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
