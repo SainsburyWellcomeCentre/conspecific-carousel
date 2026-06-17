@@ -3,5 +3,8 @@ build
 .micropico
 test.py
 dynamixel/
+lib
+typings
 # Python cache files
 __pycache__/
+*.pyc

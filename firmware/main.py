@@ -1,12 +1,109 @@
 from settings import portA, portB, portC, led, door, table, camA, camB, snsr_door, snsr_table, sync_out
+
 import asyncio
 from utility import WaitAny
 from collections import deque
+from micropython import const
+from table import ONE_EIGHTH
 import sys
 
 TX_LEN = 128
 RX_LEN = 128
 
+HEADER = const(0xCC)
+MSG_WRITE = const(0x01)
+MSG_READ = const(0x02)
+MSG_ACK = const(0x02)
+MSG_EVENT = const(0x03)
+
+# Register addresses
+REG_LED_SYNC = const(0x01)
+REG_DOOR_SENSOR = const(0x02)
+REG_TABLE_SENSOR = const(0x03)
+REG_CAM_A = const(0x04)
+REG_CAM_B = const(0x05)
+REG_DOOR_STATUS = const(0x10)
+REG_DOOR_CMD = const(0x11)
+REG_TABLE_STATUS = const(0x18)
+REG_TABLE_CMD = const(0x19)
+REG_PA_LED = const(0x21)
+REG_PA_VALVE = const(0x22)
+REG_PA_IR = const(0x23)
+REG_PB_LED = const(0x24)
+REG_PB_VALVE = const(0x25)
+REG_PB_IR = const(0x26)
+REG_PC_LED = const(0x27)
+REG_PC_VALVE = const(0x28)
+REG_PC_IR = const(0x29)
+
+
+def _tx_packet(register, msg_type, value):
+    return bytes((HEADER, register, msg_type, value))
+
+
+def _read_register(register):
+    if register == REG_LED_SYNC:
+        return led.value()
+    elif register == REG_DOOR_STATUS:
+        return door.status
+    elif register == REG_TABLE_STATUS:
+        return table.status
+    elif register == REG_DOOR_SENSOR:
+        return snsr_door.value()
+    elif register == REG_TABLE_SENSOR:
+        return snsr_table.value()
+    elif register == REG_CAM_A:
+        return camA.value()
+    elif register == REG_CAM_B:
+        return camB.value()
+    elif register == REG_PA_LED:
+        return int(portA.led)
+    elif register == REG_PA_VALVE:
+        return int(portA.valve)
+    elif register == REG_PA_IR:
+        return portA.beambreak.value()
+    elif register == REG_PB_LED:
+        return int(portB.led)
+    elif register == REG_PB_VALVE:
+        return int(portB.valve)
+    elif register == REG_PB_IR:
+        return portB.beambreak.value()
+    elif register == REG_PC_LED:
+        return int(portC.led)
+    elif register == REG_PC_VALVE:
+        return int(portC.valve)
+    elif register == REG_PC_IR:
+        return portC.beambreak.value()
+    return 0x00
+
+
+def _write_register(register, value):
+    if register == REG_LED_SYNC:
+        sync_out.value(0 if value else 1)
+        led.value(value)
+    elif register == REG_DOOR_CMD:
+        if value == 0x00:
+            door.open()
+        elif value == 0x01:
+            door.close()
+        elif value == 0x02:
+            door.stop()
+    elif register == REG_TABLE_CMD:
+        direction = (value >> 7) & 1
+        position = value & 0x7F
+        table.turn(position * ONE_EIGHTH, dir=direction)
+    elif register == REG_PA_LED:
+        portA.led = bool(value)
+    elif register == REG_PA_VALVE:
+        portA.valve = bool(value)
+    elif register == REG_PB_LED:
+        portB.led = bool(value)
+    elif register == REG_PB_VALVE:
+        portB.valve = bool(value)
+    elif register == REG_PC_LED:
+        portC.led = bool(value)
+    elif register == REG_PC_VALVE:
+        portC.valve = bool(value)
 
 async def event_monitor(txMessages: deque):
     while True:
