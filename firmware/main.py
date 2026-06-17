@@ -147,20 +147,25 @@ async def event_monitor(txMessages: deque):
 
 async def transceiver(txMessages: deque, rxMessages: deque):
     import uselect
+    from usb.device.cdc import CDCInterface
+    import usb.device
+    stream = CDCInterface(baudrate=1_000_000, timeout=0, txbuf=2048, rxbuf=512)
+    usb.device.get().init(stream, builtin_driver=False)
 
-    stream = uselect.poll()
-    stream.register(sys.stdin, uselect.POLLIN)
+    
+    # stream = uselect.poll()
+    # stream.register(sys.stdin, uselect.POLLIN)
     while True:
         # Receive 4-byte packets
-        while stream.poll(0):
-            data = sys.stdin.buffer.read(4)
-            if data and len(data) == 4 and data[0] == HEADER:
-                rxMessages.append(data)
+        
+        data = stream.read(4)
+        if data and len(data) == 4 and data[0] == HEADER:
+            rxMessages.append(data)
 
         # Send messages
         while txMessages:
             message = txMessages.popleft()
-            sys.stdout.buffer.write(message)
+            stream.write(message)
 
         await asyncio.sleep(0)
 

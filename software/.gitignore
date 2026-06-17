@@ -1,6 +1,7 @@
 .vscode
 .log
-conditions.json
+.conditions
+.task
 
 # Python cache files
 __pycache__/

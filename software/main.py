@@ -17,6 +17,7 @@ def _run_gui():
             f"{json.dumps(api.list_task_files())}"
             f")"
         )
+        # Do not auto-refresh here; refresh when device actually connects from UI
 
     api = WebApp()
     html_path = Path(__file__).resolve().parent / "ui" / "index.html"

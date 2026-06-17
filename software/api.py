@@ -174,7 +174,7 @@ class WebApp:
             return {"ok": False, "error": str(e)}
 
     def browse_and_import_condition(self) -> dict:
-        """Open a file picker then copy the selected .json into conditions/."""
+        """Open a file picker then copy the selected .json into .conditions/."""
         if not self._window:
             return {"ok": False, "error": "Window not ready."}
         result = self._window.create_file_dialog(
@@ -187,6 +187,15 @@ class WebApp:
         try:
             new_filename = self._ctrl.copy_condition_file(result[0])
             self._ctrl.enable_condition_file(new_filename)
+            files = self._ctrl.list_condition_files()
+            entry = next((f for f in files if f["filename"] == new_filename), None)
+            return {"ok": True, "entry": entry}
+        except Exception as e:
+            return {"ok": False, "error": str(e)}
+
+    def save_condition(self, condition: dict) -> dict:
+        try:
+            new_filename = self._ctrl.save_condition(condition)
             files = self._ctrl.list_condition_files()
             entry = next((f for f in files if f["filename"] == new_filename), None)
             return {"ok": True, "entry": entry}
@@ -215,7 +224,7 @@ class WebApp:
             return {"ok": False, "error": str(e)}
 
     def browse_and_import_task(self) -> dict:
-        """Open a file picker then copy the selected .py into tasks/."""
+        """Open a file picker then copy the selected .py into .task/."""
         if not self._window:
             return {"ok": False, "error": "Window not ready."}
         result = self._window.create_file_dialog(
@@ -258,17 +267,24 @@ class WebApp:
             allow_multiple=False,
             file_types=("CSV files (*.csv)", "All files (*.*)"),
         )
-        if not result:
+        # Normalise pywebview return types (some platforms return a str, others a list)
+        paths = []
+        if isinstance(result, str):
+            paths = [result]
+        elif isinstance(result, (list, tuple)):
+            paths = list(result)
+        if not paths:
             return {"ok": False, "error": "cancelled"}
         rows = []
         try:
-            with open(result[0], newline="", encoding="utf-8") as f:
+            with open(paths[0], newline="", encoding="utf-8") as f:
                 reader = csv.DictReader(f)
                 for row in reader:
                     rows.append(dict(row))
         except Exception as e:
             return {"ok": False, "error": str(e)}
-        return {"ok": True, "filename": Path(result[0]).name, "rows": rows}
+
+        return {"ok": True, "filename": Path(paths[0]).name, "rows": rows}
 
     # ------------------------------------------------------------------ #
     #  Shutdown                                                          #

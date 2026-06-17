@@ -11,8 +11,8 @@ Usable without any GUI:
     ctrl.disconnect()
     ctrl.shutdown()
 
-Conditions are stored as individual JSON files in a ``conditions/`` folder
-next to this file.  Task scripts are ``.py`` files in a ``tasks/`` folder.
+Conditions are stored as individual JSON files in a ``.conditions/`` folder
+next to this file.  Task scripts are ``.py`` files in a ``.task/`` folder.
 """
 
 import io
@@ -52,8 +52,8 @@ from conditions import ConditionEngine, Condition, trigger_from_dict
 
 
 _BASE = Path(__file__).resolve().parent
-_CONDITIONS_DIR = _BASE / "conditions"
-_TASKS_DIR = _BASE / "tasks"
+_CONDITIONS_DIR = _BASE / ".conditions"
+_TASKS_DIR = _BASE / ".task"
 _LEGACY_JSON = _BASE / "conditions.json"
 
 
@@ -95,7 +95,7 @@ class Controller:
         # Migrate legacy conditions.json → individual files
         self._migrate_legacy_conditions()
 
-        # Load enabled conditions from conditions/
+        # Load enabled conditions from .conditions/
         self._load_all_condition_files()
 
     # ------------------------------------------------------------------ #
@@ -327,7 +327,7 @@ class Controller:
         self._log(f"Migrated {len(data)} condition(s) to {_CONDITIONS_DIR.name}/")
 
     def _load_all_condition_files(self):
-        """Load all enabled conditions from conditions/ into the engine."""
+        """Load all enabled conditions from .conditions/ into the engine."""
         for path in sorted(_CONDITIONS_DIR.glob("*.json")):
             try:
                 data = json.loads(path.read_text(encoding="utf-8"))
@@ -339,7 +339,7 @@ class Controller:
                 self._log(f"Failed to load {path.name}: {e}")
 
     def list_condition_files(self) -> list[dict]:
-        """Return metadata for every .json file in conditions/."""
+        """Return metadata for every .json file in .conditions/."""
         result = []
         for path in sorted(_CONDITIONS_DIR.glob("*.json")):
             try:
@@ -419,7 +419,7 @@ class Controller:
         path.unlink()
 
     def copy_condition_file(self, src_path: str) -> str:
-        """Copy a .json file into conditions/. Returns the new filename."""
+        """Copy a .json file into .conditions/. Returns the new filename."""
         src = Path(src_path)
         dest = _CONDITIONS_DIR / src.name
         counter = 1
@@ -429,12 +429,31 @@ class Controller:
         shutil.copy2(src, dest)
         return dest.name
 
+    def save_condition(self, data: dict) -> str:
+        """Save a condition from the GUI into .conditions/ and activate it."""
+        cond = Condition.from_dict(data)
+        stem = _safe_filename(cond.name)
+        filename = f"{stem}.json"
+        dest = _CONDITIONS_DIR / filename
+        counter = 1
+        while dest.exists():
+            filename = f"{stem}_{counter}.json"
+            dest = _CONDITIONS_DIR / filename
+            counter += 1
+
+        dest.write_text(json.dumps(data, indent=2), encoding="utf-8")
+
+        if data.get("enabled", True):
+            self._condition_engine.add_condition(cond)
+
+        return dest.name
+
     # ------------------------------------------------------------------ #
     #  Tasks — file management                                           #
     # ------------------------------------------------------------------ #
 
     def list_task_files(self) -> list[dict]:
-        """Return list of {filename} for every .py file in tasks/."""
+        """Return list of {filename} for every .py file in .task/."""
         return [{"filename": p.name} for p in sorted(_TASKS_DIR.glob("*.py"))]
 
     def run_task(self, filename: str):
@@ -474,7 +493,7 @@ class Controller:
             self._fire(self._task_status_cbs, filename, "error")
 
     def copy_task_file(self, src_path: str) -> str:
-        """Copy a .py file into tasks/. Returns the new filename."""
+        """Copy a .py file into .task/. Returns the new filename."""
         src = Path(src_path)
         dest = _TASKS_DIR / src.name
         counter = 1
