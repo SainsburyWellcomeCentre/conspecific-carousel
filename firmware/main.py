@@ -1,9 +1,10 @@
 from settings import portA, portB, portC, led, door, table, camA, camB, snsr_door, snsr_table, sync_out
+
 import asyncio
 from utility import WaitAny
 from collections import deque
 from micropython import const
-from table import one_eighth
+from table import ONE_EIGHTH
 import sys
 
 TX_LEN = 128
@@ -46,7 +47,7 @@ def _read_register(register):
     elif register == REG_DOOR_STATUS:
         return door.status
     elif register == REG_TABLE_STATUS:
-        return 0x01 if table.ismoving else 0x00
+        return table.status
     elif register == REG_DOOR_SENSOR:
         return snsr_door.value()
     elif register == REG_TABLE_SENSOR:
@@ -90,7 +91,7 @@ def _write_register(register, value):
     elif register == REG_TABLE_CMD:
         direction = (value >> 7) & 1
         position = value & 0x7F
-        table.turn(position * one_eighth, dir=direction)
+        table.turn(position * ONE_EIGHTH, dir=direction)
     elif register == REG_PA_LED:
         portA.led = bool(value)
     elif register == REG_PA_VALVE:
@@ -125,7 +126,7 @@ async def event_monitor(txMessages: deque):
         if evt is door.isr:
             txMessages.append(_tx_packet(REG_DOOR_STATUS, MSG_EVENT, door.status))
         elif evt is table.isr:
-            txMessages.append(_tx_packet(REG_TABLE_STATUS, MSG_EVENT, 0x01 if table.ismoving else 0x00))
+            txMessages.append(_tx_packet(REG_TABLE_STATUS, MSG_EVENT, table.status))
         elif evt is portA.beambreak.isr:
             txMessages.append(_tx_packet(REG_PA_IR, MSG_EVENT, portA.beambreak.value()))
         elif evt is portB.beambreak.isr:
