@@ -7,8 +7,11 @@ const REG = {
   CAM_B:        0x05,
   DOOR_STATUS:  0x10,
   DOOR_CMD:     0x11,
+  DOOR_OPN_SPD: 0x12,
+  DOOR_CLS_SPD: 0x13,
   TABLE_STATUS: 0x18,
   TABLE_CMD:    0x19,
+  TABLE_SPD:    0x1A,
   PA_LED:       0x21,
   PA_VALVE:     0x22,
   PA_IR:        0x23,
@@ -18,6 +21,8 @@ const REG = {
   PC_LED:       0x27,
   PC_VALVE:     0x28,
   PC_IR:        0x29,
+  BZR_EN:       0x30,
+  BZR_FREQ:     0x31,
 };
 
 /* ── Chart instance ──────────────────────────────────────────── */
@@ -29,11 +34,9 @@ let chartInstance = null;
 const app = {
 
   /** Called once after page load with condition files + task files. */
-  init(conditionFiles, taskFiles) {
-    _initConditionBuilder();
-    conditionFiles.forEach(_appendConditionRow);
+  init(taskFiles) {
     taskFiles.forEach(t => _appendTaskRow(t.filename, 'idle'));
-    _log(`Loaded ${conditionFiles.length} condition(s), ${taskFiles.length} task(s)`);
+    _log(`Loaded ${taskFiles.length} task(s)`);
   },
 
   /** Status update (from ACK or Refresh All). */
@@ -74,6 +77,43 @@ function _updateStatusVal(register, text) {
   document.querySelectorAll(`.status-val[data-reg="${hex}"]`).forEach(el => {
     el.textContent = text;
   });
+  // Update slider numeric displays when readable registers change
+  if (hex === '0x12') {
+    const el = document.getElementById('door-open-speed');
+    const val = parseInt(text) || 0;
+    if (el) el.value = val;
+    const disp = document.getElementById('door-open-speed-val'); if (disp) disp.textContent = String(val);
+  }
+  if (hex === '0x13') {
+    const el = document.getElementById('door-close-speed');
+    const val = parseInt(text) || 0;
+    if (el) el.value = val;
+    const disp = document.getElementById('door-close-speed-val'); if (disp) disp.textContent = String(val);
+  }
+  if (hex === '0x1a') {
+    const el = document.getElementById('table-speed');
+    const val = parseInt(text) || 0;
+    if (el) el.value = val;
+    const disp = document.getElementById('table-speed-val'); if (disp) disp.textContent = String(val);
+  }
+  if (hex === '0x30') {
+    // Buzzer enable checkbox updated by generic checkbox handler, but ensure id reflects state
+    const cb = document.getElementById('buzzer-enable');
+    if (cb) cb.checked = !!(parseInt(text) || 0);
+  }
+  if (hex === '0x31') {
+    const el = document.getElementById('buzzer-freq');
+    const val = parseInt(text) || 0;
+    if (el) el.value = val;
+    const disp = document.getElementById('buzzer-freq-val'); if (disp) disp.textContent = `${bzRawToHz(val)} Hz`;
+  }
+}
+
+// Convert buzzer raw register value (0-255) to frequency in Hz.
+function bzRawToHz(raw) {
+  // Linear mapping 0..255 -> 0..5000 Hz (adjust multiplier if hardware differs)
+  const hz = Math.round((Number(raw) / 255) * 5000);
+  return hz;
 }
 
 function _updateToggle(register, value) {
@@ -99,175 +139,9 @@ function _esc(s) {
     .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-let _triggerOptions = [];
-let _actionOptions = [];
+// Conditions UI removed — related builder and helper functions deleted.
 
-async function _initConditionBuilder() {
-  try {
-    _triggerOptions = await window.pywebview.api.get_trigger_options();
-    _actionOptions = await window.pywebview.api.get_action_options();
-  } catch (e) {
-    _log(`ERROR: Failed to load condition options: ${e}`);
-    _triggerOptions = [];
-    _actionOptions = [];
-  }
-
-  const actionSelect = document.getElementById('cond-action');
-  actionSelect.innerHTML = _actionOptions.map(o =>
-    `<option value="${o.register}:${o.value}">${_esc(o.label)}</option>`
-  ).join('');
-
-  document.getElementById('btn-cond-add-group').addEventListener('click', _addConditionGroup);
-  document.getElementById('btn-cond-create').addEventListener('click', _createConditionFromBuilder);
-
-  _addConditionGroup();
-}
-
-function _addConditionGroup() {
-  const container = document.getElementById('cond-group-rows');
-  const group = document.createElement('div');
-  group.className = 'cond-group';
-
-  const header = document.createElement('div');
-  header.className = 'group-header';
-
-  const modeLabel = document.createElement('label');
-  modeLabel.textContent = 'Group match:';
-  const modeSelect = document.createElement('select');
-  modeSelect.className = 'cond-group-mode';
-  modeSelect.innerHTML = `
-    <option value="or">Any (OR)</option>
-    <option value="and">All (AND)</option>
-  `;
-  modeLabel.appendChild(modeSelect);
-
-  const removeGroup = document.createElement('button');
-  removeGroup.type = 'button';
-  removeGroup.className = 'btn-cond-remove-group';
-  removeGroup.textContent = 'Remove Group';
-  removeGroup.addEventListener('click', () => group.remove());
-
-  header.appendChild(modeLabel);
-  header.appendChild(removeGroup);
-
-  const rows = document.createElement('div');
-  rows.className = 'cond-trigger-rows';
-
-  const addTriggerButton = document.createElement('button');
-  addTriggerButton.type = 'button';
-  addTriggerButton.className = 'btn-cond-add-trigger';
-  addTriggerButton.textContent = 'Add Trigger';
-  addTriggerButton.addEventListener('click', () => _addConditionTriggerRow(rows));
-
-  group.appendChild(header);
-  group.appendChild(rows);
-  group.appendChild(addTriggerButton);
-  container.appendChild(group);
-
-  _addConditionTriggerRow(rows);
-}
-
-function _addConditionTriggerRow(container) {
-  const row = document.createElement('div');
-  row.className = 'cond-trigger-row';
-
-  const select = document.createElement('select');
-  select.className = 'cond-trigger-select';
-  select.innerHTML = _triggerOptions.map((o, idx) =>
-    `<option value="${idx}">${_esc(o.label)}</option>`
-  ).join('');
-
-  const removeButton = document.createElement('button');
-  removeButton.type = 'button';
-  removeButton.className = 'cond-trigger-remove';
-  removeButton.textContent = 'Remove';
-  removeButton.addEventListener('click', () => {
-    row.remove();
-  });
-
-  row.appendChild(select);
-  row.appendChild(removeButton);
-  container.appendChild(row);
-}
-
-function _buildConditionPayload() {
-  const name = document.getElementById('cond-name').value.trim();
-  const rootMode = document.getElementById('cond-root-mode').value;
-  const groups = Array.from(document.querySelectorAll('.cond-group'));
-  const actionValue = document.getElementById('cond-action').value;
-
-  if (!name) {
-    throw new Error('Enter a condition name.');
-  }
-  if (groups.length === 0) {
-    throw new Error('Add at least one group.');
-  }
-
-  const children = groups.map(group => {
-    const modeSelect = group.querySelector('.cond-group-mode');
-    const rows = Array.from(group.querySelectorAll('.cond-trigger-select'));
-    if (rows.length === 0) {
-      throw new Error('Each group must contain at least one trigger.');
-    }
-    return {
-      type: modeSelect && modeSelect.value === 'and' ? 'and' : 'or',
-      children: rows.map(select => {
-        const option = _triggerOptions[parseInt(select.value, 10)];
-        if (!option) {
-          throw new Error('Invalid trigger selection.');
-        }
-        return {
-          type: 'leaf',
-          register: option.register,
-          value: option.value,
-          label: option.label,
-        };
-      }),
-    };
-  });
-
-  const [actionReg, actionVal] = actionValue.split(':').map(Number);
-  if (Number.isNaN(actionReg) || Number.isNaN(actionVal)) {
-    throw new Error('Invalid action selection.');
-  }
-
-  return {
-    name,
-    enabled: true,
-    trigger: {
-      type: rootMode === 'and' ? 'and' : 'or',
-      children,
-    },
-    action_register: actionReg,
-    action_value: actionVal,
-  };
-}
-
-async function _createConditionFromBuilder() {
-  try {
-    const payload = _buildConditionPayload();
-    const res = await window.pywebview.api.save_condition(payload);
-    if (!res || !res.ok) {
-      _log('ERROR: ' + (res ? res.error : 'Failed to save condition'));
-      return;
-    }
-    _log(`Condition created: ${payload.name}`);
-    _refreshConditionList();
-  } catch (e) {
-    _log('ERROR: ' + e.message);
-  }
-}
-
-async function _refreshConditionList() {
-  try {
-    const files = await window.pywebview.api.list_condition_files();
-    const tbody = document.getElementById('cond-tbody');
-    tbody.innerHTML = '';
-    files.forEach(_appendConditionRow);
-  } catch (e) {
-    _log('ERROR: Failed to refresh conditions: ' + e);
-  }
-}
+// Conditions UI removed — builder and list functions deleted.
 
 function _initPanelResizer() {
   const resizer = document.getElementById('panel-resizer');
@@ -311,57 +185,24 @@ function _initPanelResizer() {
 }
 
 function _initRowResizer() {
-  const resizer = document.getElementById('row-resizer');
-  const main = document.getElementById('main');
-  if (!resizer || !main) return;
-
-  let isDragging = false;
-  let startY = 0;
-  let startHeight = 0;
-
-  resizer.addEventListener('pointerdown', e => {
-    isDragging = true;
-    startY = e.clientY;
-    const topPanel = document.getElementById('left-panel');
-    startHeight = topPanel ? topPanel.getBoundingClientRect().height : main.getBoundingClientRect().height / 2;
-    document.body.style.cursor = 'row-resize';
-    document.body.style.userSelect = 'none';
-    resizer.setPointerCapture(e.pointerId);
-  });
-
-  resizer.addEventListener('pointermove', e => {
-    if (!isDragging) return;
-    const delta = e.clientY - startY;
-    const containerHeight = main.clientHeight;
-    const minHeight = 200;
-    const maxHeight = Math.max(containerHeight - 180, minHeight);
-    const newHeight = Math.min(Math.max(startHeight + delta, minHeight), maxHeight);
-    document.documentElement.style.setProperty('--top-row-height', `${newHeight}px`);
-  });
-
-  const stopDragging = () => {
-    if (!isDragging) return;
-    isDragging = false;
-    document.body.style.cursor = '';
-    document.body.style.userSelect = '';
-  };
-
-  resizer.addEventListener('pointerup', stopDragging);
-  resizer.addEventListener('pointercancel', stopDragging);
-  window.addEventListener('pointerup', stopDragging);
+  // Row resizer removed — no-op to preserve call sites if any.
 }
 
 function _initLogToggle() {
   const button = document.getElementById('btn-toggle-log');
   const logBar = document.getElementById('log-bar');
-  const logResizer = document.getElementById('log-resizer');
+  const grabber = document.getElementById('log-grabber');
   if (!button || !logBar) return;
 
   const updateLabel = () => {
     const collapsed = logBar.classList.contains('log-collapsed');
     button.textContent = collapsed ? 'Show' : 'Hide';
-    if (logResizer) {
-      logResizer.style.display = collapsed ? 'none' : 'block';
+    if (grabber) grabber.style.display = collapsed ? 'none' : 'block';
+    if (!collapsed) {
+      adjustTopForLog();
+    } else {
+      // restore default top row behaviour when log is hidden
+      document.documentElement.style.removeProperty('--top-row-height');
     }
   };
 
@@ -373,51 +214,65 @@ function _initLogToggle() {
   updateLabel();
 }
 
-function _initLogResizer() {
-  const resizer = document.getElementById('log-resizer');
+function _initLogGrabber() {
+  const grabber = document.getElementById('log-grabber');
   const logBar = document.getElementById('log-bar');
-  if (!resizer || !logBar) return;
+  if (!grabber || !logBar) return;
 
   let isDragging = false;
   let startY = 0;
   let startHeight = 0;
 
-  resizer.addEventListener('pointerdown', e => {
+  grabber.addEventListener('pointerdown', e => {
     isDragging = true;
     startY = e.clientY;
     startHeight = logBar.getBoundingClientRect().height;
     document.body.style.cursor = 'row-resize';
     document.body.style.userSelect = 'none';
-    resizer.setPointerCapture(e.pointerId);
-    if (logBar.classList.contains('log-collapsed')) {
-      logBar.classList.remove('log-collapsed');
-    }
+    grabber.setPointerCapture(e.pointerId);
+    if (logBar.classList.contains('log-collapsed')) logBar.classList.remove('log-collapsed');
   });
 
-  resizer.addEventListener('pointermove', e => {
+  grabber.addEventListener('pointermove', e => {
     if (!isDragging) return;
     const delta = startY - e.clientY;
-    const newHeight = Math.max(120, startHeight + delta);
-    const maxHeight = Math.max(window.innerHeight - 200, 160);
+    const newHeight = Math.max(80, startHeight + delta);
+    const maxHeight = Math.max(window.innerHeight - 120, 120);
     document.documentElement.style.setProperty('--log-height', `${Math.min(newHeight, maxHeight)}px`);
+    adjustTopForLog();
   });
 
-  const stopDragging = () => {
+  const stop = () => {
     if (!isDragging) return;
     isDragging = false;
     document.body.style.cursor = '';
     document.body.style.userSelect = '';
   };
 
-  resizer.addEventListener('pointerup', stopDragging);
-  resizer.addEventListener('pointercancel', stopDragging);
-  window.addEventListener('pointerup', stopDragging);
+  grabber.addEventListener('pointerup', stop);
+  grabber.addEventListener('pointercancel', stop);
+  window.addEventListener('pointerup', stop);
 }
+
+function adjustTopForLog() {
+  const logBar = document.getElementById('log-bar');
+  if (!logBar) return;
+  if (logBar.classList.contains('log-collapsed')) return;
+  const root = getComputedStyle(document.documentElement);
+  let logH = parseInt(root.getPropertyValue('--log-height')) || 0;
+  if (!logH) logH = logBar.getBoundingClientRect().height;
+  const newTop = Math.max(200, window.innerHeight - logH - 120);
+  document.documentElement.style.setProperty('--top-row-height', `${newTop}px`);
+}
+
+window.addEventListener('resize', () => {
+  adjustTopForLog();
+});
 
 _initPanelResizer();
 _initRowResizer();
 _initLogToggle();
-_initLogResizer();
+_initLogGrabber();
 
 /* ═══════════════════════════════════════════════════════ */
 /*  Connection bar                                                */
@@ -469,6 +324,75 @@ document.getElementById('btn-refresh-all').addEventListener('click', () => {
   window.pywebview.api.refresh_all();
 });
 
+// Speed sliders: write register on change and update numeric display
+const doorOpenEl = document.getElementById('door-open-speed');
+if (doorOpenEl) {
+  const disp = document.getElementById('door-open-speed-val');
+  doorOpenEl.addEventListener('input', function () { if (disp) disp.textContent = this.value; });
+  doorOpenEl.addEventListener('change', function () { window.pywebview.api.write_register(parseInt(this.dataset.reg, 16), parseInt(this.value)); });
+}
+const doorCloseEl = document.getElementById('door-close-speed');
+if (doorCloseEl) {
+  const disp = document.getElementById('door-close-speed-val');
+  doorCloseEl.addEventListener('input', function () { if (disp) disp.textContent = this.value; });
+  doorCloseEl.addEventListener('change', function () { window.pywebview.api.write_register(parseInt(this.dataset.reg, 16), parseInt(this.value)); });
+}
+const tableSpeedEl = document.getElementById('table-speed');
+if (tableSpeedEl) {
+  const disp = document.getElementById('table-speed-val');
+  tableSpeedEl.addEventListener('input', function () { if (disp) disp.textContent = this.value; });
+  tableSpeedEl.addEventListener('change', function () { window.pywebview.api.write_register(parseInt(this.dataset.reg, 16), parseInt(this.value)); });
+}
+
+// Buzzer controls
+const buzzerFreqEl = document.getElementById('buzzer-freq');
+if (buzzerFreqEl) {
+  const disp = document.getElementById('buzzer-freq-val');
+  // Throttle writes to device to ~50ms while dragging
+  let _bz_lastSend = 0;
+  let _bz_timer = null;
+  let _bz_pending = null;
+
+  function _bz_send(val) {
+    _bz_lastSend = Date.now();
+    window.pywebview.api.write_register(parseInt(buzzerFreqEl.dataset.reg, 16), parseInt(val));
+  }
+
+  buzzerFreqEl.addEventListener('input', function () {
+    const hz = bzRawToHz(this.value);
+    if (disp) disp.textContent = `${hz} Hz`;
+    _bz_pending = this.value;
+    const now = Date.now();
+    const elapsed = now - _bz_lastSend;
+    if (elapsed >= 50) {
+      if (_bz_timer) { clearTimeout(_bz_timer); _bz_timer = null; }
+      _bz_send(_bz_pending);
+      _bz_pending = null;
+    } else {
+      if (_bz_timer) clearTimeout(_bz_timer);
+      _bz_timer = setTimeout(() => {
+        if (_bz_pending != null) _bz_send(_bz_pending);
+        _bz_pending = null;
+        _bz_timer = null;
+      }, 50 - elapsed);
+    }
+  });
+
+  // Ensure final value is written when interaction ends
+  buzzerFreqEl.addEventListener('change', function () {
+    if (_bz_timer) { clearTimeout(_bz_timer); _bz_timer = null; }
+    _bz_pending = null;
+    _bz_send(this.value);
+  });
+}
+
+// Note: checkbox inputs with data-reg are already wired by the generic checkbox handler above;
+// `buzzer-enable` (data-reg="0x30") will be handled there. Ensure numeric display initialized.
+const buzzerInitEl = document.getElementById('buzzer-freq');
+if (buzzerInitEl) {
+  const disp = document.getElementById('buzzer-freq-val'); if (disp) disp.textContent = `${bzRawToHz(buzzerInitEl.value)} Hz`;
+}
+
 /* ═══════════════════════════════════════════════════════════════ */
 /*  Toggle switches                                               */
 /* ═══════════════════════════════════════════════════════════════ */
@@ -507,68 +431,8 @@ document.getElementById('btn-table-turn').addEventListener('click', async () => 
 /* ═══════════════════════════════════════════════════════════════ */
 /*  Condition file table helpers                                  */
 /* ═══════════════════════════════════════════════════════════════ */
-function _appendConditionRow(entry) {
-  const tbody = document.getElementById('cond-tbody');
-  const tr = document.createElement('tr');
-  tr.dataset.filename = entry.filename;
-
-  const tdToggle = document.createElement('td');
-  tdToggle.style.textAlign = 'center';
-  const lbl = document.createElement('label');
-  lbl.className = 'toggle';
-  lbl.style.cssText = 'width:32px;height:18px;display:inline-block';
-  const cb = document.createElement('input');
-  cb.type = 'checkbox'; cb.checked = entry.enabled;
-  cb.addEventListener('change', async () => {
-    const fn = entry.filename;
-    const res = cb.checked
-      ? await window.pywebview.api.enable_condition_file(fn)
-      : await window.pywebview.api.disable_condition_file(fn);
-    if (res && !res.ok) { _log('ERROR: ' + res.error); cb.checked = !cb.checked; }
-  });
-  const sliderSpan = document.createElement('span');
-  sliderSpan.className = 'slider';
-  lbl.appendChild(cb); lbl.appendChild(sliderSpan);
-  tdToggle.appendChild(lbl);
-  tr.appendChild(tdToggle);
-
-  tr.insertAdjacentHTML('beforeend', `
-    <td>${_esc(entry.filename)}</td>
-    <td>${_esc(entry.name)}</td>
-    <td style="color:var(--text-dim);font-size:11px">${_esc(entry.trigger_desc)}</td>
-    <td style="color:var(--text-dim);font-size:11px">${_esc(entry.action_text)}</td>
-  `);
-
-  const tdDelete = document.createElement('td');
-  tdDelete.style.textAlign = 'center';
-  const delButton = document.createElement('button');
-  delButton.type = 'button';
-  delButton.textContent = 'Delete';
-  delButton.addEventListener('click', async e => {
-    e.stopPropagation();
-    const res = await window.pywebview.api.delete_condition_file(entry.filename);
-    if (res && res.ok) {
-      tr.remove();
-      _log(`Condition deleted: ${entry.filename}`);
-    } else {
-      _log('ERROR: ' + (res ? res.error : 'Unknown'));
-    }
-  });
-  tdDelete.appendChild(delButton);
-  tr.appendChild(tdDelete);
-
-  tr.addEventListener('click', e => {
-    if (e.target.type === 'checkbox' || e.target === delButton) return;
-    document.querySelectorAll('#cond-tbody tr').forEach(r => r.classList.remove('selected'));
-    tr.classList.add('selected');
-  });
-  tbody.appendChild(tr);
-}
-
-function _selectedCondFilename() {
-  const sel = document.querySelector('#cond-tbody tr.selected');
-  return sel ? sel.dataset.filename : null;
-}
+// Condition table removed.
+// Condition table removed.
 
 /* ═══════════════════════════════════════════════════════════════ */
 /*  Condition file management                                     */

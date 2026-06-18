@@ -1,11 +1,11 @@
-from settings import portA, portB, portC, led, door, table, camA, camB, snsr_door, snsr_table, sync_out
+from settings import portA, portB, portC, led, door, table, camA, camB, snsr_door, snsr_table, sync_out, buzzer
 
 import asyncio
 from utility import WaitAny
 from collections import deque
 from micropython import const
 from table import ONE_EIGHTH
-import sys
+
 
 TX_LEN = 128
 RX_LEN = 128
@@ -20,12 +20,19 @@ MSG_EVENT = const(0x03)
 REG_LED_SYNC = const(0x01)
 REG_DOOR_SENSOR = const(0x02)
 REG_TABLE_SENSOR = const(0x03)
+
 REG_CAM_A = const(0x04)
 REG_CAM_B = const(0x05)
+
 REG_DOOR_STATUS = const(0x10)
 REG_DOOR_CMD = const(0x11)
+REG_DOOR_OPN_SPD = const(0x12)
+REG_DOOR_CLS_SPD = const(0x13)
+
 REG_TABLE_STATUS = const(0x18)
 REG_TABLE_CMD = const(0x19)
+REG_TABLE_SPD = const(0x1A)
+
 REG_PA_LED = const(0x21)
 REG_PA_VALVE = const(0x22)
 REG_PA_IR = const(0x23)
@@ -35,6 +42,9 @@ REG_PB_IR = const(0x26)
 REG_PC_LED = const(0x27)
 REG_PC_VALVE = const(0x28)
 REG_PC_IR = const(0x29)
+
+REG_BZR_EN = const(0x30)
+REG_BZR_FREQ = const(0x31)
 
 
 def _tx_packet(register, msg_type, value):
@@ -48,6 +58,12 @@ def _read_register(register):
         return door.status
     elif register == REG_TABLE_STATUS:
         return table.status
+    elif register == REG_DOOR_OPN_SPD:
+        return door.speed_open
+    elif register == REG_DOOR_CLS_SPD:
+        return door.speed_close
+    elif register == REG_TABLE_SPD:
+        return table.speed
     elif register == REG_DOOR_SENSOR:
         return snsr_door.value()
     elif register == REG_TABLE_SENSOR:
@@ -74,6 +90,10 @@ def _read_register(register):
         return int(portC.valve)
     elif register == REG_PC_IR:
         return portC.beambreak.value()
+    elif register == REG_BZR_EN:
+        return buzzer.enabled
+    elif register == REG_BZR_FREQ:
+        return buzzer.freq
     return 0x00
 
 
@@ -92,6 +112,12 @@ def _write_register(register, value):
         direction = (value >> 7) & 1
         position = value & 0x7F
         table.turn(position * ONE_EIGHTH, dir=direction)
+    elif register == REG_DOOR_OPN_SPD:
+        door.speed_open = value
+    elif register == REG_DOOR_CLS_SPD:
+        door.speed_close = value
+    elif register == REG_TABLE_SPD:
+        table.speed = value
     elif register == REG_PA_LED:
         portA.led = bool(value)
     elif register == REG_PA_VALVE:
@@ -104,6 +130,10 @@ def _write_register(register, value):
         portC.led = bool(value)
     elif register == REG_PC_VALVE:
         portC.valve = bool(value)
+    elif register == REG_BZR_EN:
+        buzzer.enabled = bool(value)
+    elif register == REG_BZR_FREQ:
+        buzzer.freq = value
 
 
 async def event_monitor(txMessages: deque):
@@ -146,7 +176,7 @@ async def event_monitor(txMessages: deque):
 
 
 async def transceiver(txMessages: deque, rxMessages: deque):
-    import uselect
+
     from usb.device.cdc import CDCInterface
     import usb.device
     stream = CDCInterface(baudrate=1_000_000, timeout=0, txbuf=2048, rxbuf=512)

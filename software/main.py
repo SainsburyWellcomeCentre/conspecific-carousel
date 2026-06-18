@@ -13,7 +13,6 @@ def _run_gui():
         api.set_window(window)
         window.evaluate_js(
             f"app.init("
-            f"{json.dumps(api.list_condition_files())}, "
             f"{json.dumps(api.list_task_files())}"
             f")"
         )

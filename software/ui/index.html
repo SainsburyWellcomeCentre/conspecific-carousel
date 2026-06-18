@@ -63,6 +63,16 @@
             <button data-reg="0x11" data-val="0x01">Close</button>
             <button data-reg="0x11" data-val="0x02">Stop</button>
           </div>
+          <div class="card-row2" style="align-items:center;gap:8px;margin-top:8px">
+            <label style="font-size:11px;color:var(--text-dim);min-width:90px">Open speed:</label>
+            <input id="door-open-speed" type="range" min="0" max="255" value="128" data-reg="0x12" style="flex:1">
+            <span id="door-open-speed-val" style="width:40px;text-align:right">128</span>
+          </div>
+          <div class="card-row2" style="align-items:center;gap:8px;margin-top:4px">
+            <label style="font-size:11px;color:var(--text-dim);min-width:90px">Close speed:</label>
+            <input id="door-close-speed" type="range" min="0" max="255" value="128" data-reg="0x13" style="flex:1">
+            <span id="door-close-speed-val" style="width:40px;text-align:right">128</span>
+          </div>
           <div class="card-kv">
             <span>Status:</span>
             <span class="status-val" data-reg="0x10">--</span>
@@ -86,6 +96,11 @@
               <input id="tbl-steps" type="number" min="1" max="127" value="1" style="width:54px">
             </label>
             <button id="btn-table-turn">Turn</button>
+          </div>
+          <div class="card-row2" style="align-items:center;gap:8px;margin-top:8px">
+            <label style="font-size:11px;color:var(--text-dim);min-width:90px">Table speed:</label>
+            <input id="table-speed" type="range" min="0" max="255" value="128" data-reg="0x1A" style="flex:1">
+            <span id="table-speed-val" style="width:40px;text-align:right">128</span>
           </div>
           <div class="card-kv">
             <span>Status:</span>
@@ -168,57 +183,33 @@
         </div>
       </div>
 
+      <!-- Buzzer -->
+      <div class="section-label">Buzzer</div>
+      <div class="card">
+        <div class="card-row2" style="align-items:center;gap:12px">
+          <div style="min-width:120px">
+            <label style="font-size:11px;color:var(--text-dim);display:block">Enable</label>
+            <label class="toggle">
+              <input type="checkbox" id="buzzer-enable" data-reg="0x30">
+              <span class="slider"></span>
+            </label>
+          </div>
+          <div style="flex:1;display:flex;align-items:center;gap:8px">
+            <label style="font-size:11px;color:var(--text-dim);min-width:90px">Frequency</label>
+            <input id="buzzer-freq" type="range" min="0" max="255" value="128" data-reg="0x31" style="flex:1">
+            <span id="buzzer-freq-val" style="width:48px;text-align:right">128</span>
+          </div>
+        </div>
+      </div>
+
     </div><!-- .panel-body -->
   </div><!-- .panel -->
 
   <div id="panel-resizer" class="panel-resizer" role="separator" aria-orientation="vertical" tabindex="0" title="Drag to resize panels"></div>
 
-  <div class="panel" id="condition-panel">
-    <div class="panel-title">Conditions</div>
-    <div class="panel-body">
-      <div class="condition-builder">
-        <div class="builder-row builder-row-wrap">
-          <label>Name:
-            <input type="text" id="cond-name" placeholder="e.g. Stop door when sensor triggers">
-          </label>
-          <label>Root match:
-            <select id="cond-root-mode">
-              <option value="and">All groups (AND)</option>
-              <option value="or">Any groups (OR)</option>
-            </select>
-          </label>
-          <button id="btn-cond-add-group" type="button">Add Group</button>
-        </div>
-        <div id="cond-group-rows"></div>
-        <div class="builder-actions">
-          <label>Action:
-            <select id="cond-action"></select>
-          </label>
-          <button id="btn-cond-create">Create Condition</button>
-        </div>
-      </div>
-      <div class="file-table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th style="width:32px">On</th>
-              <th>File</th>
-              <th>Name</th>
-              <th>When</th>
-              <th>Then</th>
-              <th style="width:72px">Action</th>
-            </tr>
-          </thead>
-          <tbody id="cond-tbody"></tbody>
-        </table>
-      </div>
-      <div class="file-buttons">
-        <!-- condition import/delete buttons removed; use UI builder instead -->
-      </div>
-    </div>
-  </div>
+  <!-- Conditions panel removed -->
 
-  <div id="row-resizer" class="panel-resizer-horizontal" role="separator" aria-orientation="horizontal" tabindex="0" title="Drag to resize top/bottom panels"></div>
+  <!-- row-resizer removed (no draggable bottom border) -->
 
   <div class="panel" id="task-panel">
     <div class="panel-title">Tasks</div>
@@ -243,10 +234,9 @@
 
 </div><!-- #main -->
 
-<div id="log-resizer" class="panel-resizer-horizontal" role="separator" aria-orientation="horizontal" tabindex="0" title="Drag to resize log panel"></div>
-
 <!-- EVENT LOG -->
 <div id="log-bar" class="log-collapsed">
+  <div id="log-grabber" class="panel-resizer-horizontal" style="display:none" title="Drag to resize log panel"></div>
   <div class="panel-title">
     Event Log
     <button id="btn-toggle-log" class="btn-secondary btn-toggle-log" type="button">Show</button>

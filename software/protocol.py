@@ -15,8 +15,11 @@ REG_CAM_A = 0x04
 REG_CAM_B = 0x05
 REG_DOOR_STATUS = 0x10
 REG_DOOR_CMD = 0x11
+REG_DOOR_OPN_SPD = 0x12
+REG_DOOR_CLS_SPD = 0x13
 REG_TABLE_STATUS = 0x18
 REG_TABLE_CMD = 0x19
+REG_TABLE_SPD = 0x1A
 REG_PA_LED = 0x21
 REG_PA_VALVE = 0x22
 REG_PA_IR = 0x23
@@ -27,6 +30,9 @@ REG_PC_LED = 0x27
 REG_PC_VALVE = 0x28
 REG_PC_IR = 0x29
 
+REG_BZR_EN = 0x30
+REG_BZR_FREQ = 0x31
+
 REGISTER_NAMES = {
     REG_LED_SYNC: "LED/Sync",
     REG_DOOR_SENSOR: "Door Sensor",
@@ -35,8 +41,11 @@ REGISTER_NAMES = {
     REG_CAM_B: "Cam B",
     REG_DOOR_STATUS: "Door Status",
     REG_DOOR_CMD: "Door Command",
+    REG_DOOR_OPN_SPD: "Door Open Speed",
+    REG_DOOR_CLS_SPD: "Door Close Speed",
     REG_TABLE_STATUS: "Table Status",
     REG_TABLE_CMD: "Table Command",
+    REG_TABLE_SPD: "Table Speed",
     REG_PA_LED: "Port A LED",
     REG_PA_VALVE: "Port A Valve",
     REG_PA_IR: "Port A IR",
@@ -46,6 +55,8 @@ REGISTER_NAMES = {
     REG_PC_LED: "Port C LED",
     REG_PC_VALVE: "Port C Valve",
     REG_PC_IR: "Port C IR",
+    REG_BZR_EN: "Buzzer Enabled",
+    REG_BZR_FREQ: "Buzzer Frequency",
 }
 
 DOOR_STATUS_MAP = {0: "Closed", 1: "Opened", 2: "Moving", 3: "Paused"}
@@ -54,9 +65,11 @@ TABLE_STATUS_MAP = {0: "Stopped", 1: "Moving"}
 READABLE_REGISTERS = [
     REG_LED_SYNC, REG_DOOR_SENSOR, REG_TABLE_SENSOR,
     REG_CAM_A, REG_CAM_B, REG_DOOR_STATUS, REG_TABLE_STATUS,
+    REG_DOOR_OPN_SPD, REG_DOOR_CLS_SPD, REG_TABLE_SPD,
     REG_PA_LED, REG_PA_VALVE, REG_PA_IR,
     REG_PB_LED, REG_PB_VALVE, REG_PB_IR,
     REG_PC_LED, REG_PC_VALVE, REG_PC_IR,
+    REG_BZR_EN, REG_BZR_FREQ,
 ]
 
 
@@ -137,4 +150,6 @@ ACTION_OPTIONS = [
     ("Port C LED: Off", REG_PC_LED, 0),
     ("Port C Valve: On", REG_PC_VALVE, 1),
     ("Port C Valve: Off", REG_PC_VALVE, 0),
+    ("Buzzer: Enable", REG_BZR_EN, 1),
+    ("Buzzer: Disable", REG_BZR_EN, 0),
 ]

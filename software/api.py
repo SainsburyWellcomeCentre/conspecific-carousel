@@ -19,8 +19,6 @@ from protocol import (
     MSG_WRITE,
     format_value,
     reg_name,
-    TRIGGER_OPTIONS,
-    ACTION_OPTIONS,
     REGISTER_NAMES,
 )
 from controller import Controller
@@ -146,61 +144,7 @@ class WebApp:
             return {"ok": False, "error": str(e)}
 
     # ------------------------------------------------------------------ #
-    #  JS-callable: condition files                                      #
-    # ------------------------------------------------------------------ #
-
-    def list_condition_files(self) -> list:
-        return self._ctrl.list_condition_files()
-
-    def enable_condition_file(self, filename: str) -> dict:
-        try:
-            self._ctrl.enable_condition_file(filename)
-            return {"ok": True}
-        except Exception as e:
-            return {"ok": False, "error": str(e)}
-
-    def disable_condition_file(self, filename: str) -> dict:
-        try:
-            self._ctrl.disable_condition_file(filename)
-            return {"ok": True}
-        except Exception as e:
-            return {"ok": False, "error": str(e)}
-
-    def delete_condition_file(self, filename: str) -> dict:
-        try:
-            self._ctrl.delete_condition_file(filename)
-            return {"ok": True}
-        except Exception as e:
-            return {"ok": False, "error": str(e)}
-
-    def browse_and_import_condition(self) -> dict:
-        """Open a file picker then copy the selected .json into .conditions/."""
-        if not self._window:
-            return {"ok": False, "error": "Window not ready."}
-        result = self._window.create_file_dialog(
-            webview.OPEN_DIALOG,
-            allow_multiple=False,
-            file_types=("Condition JSON (*.json)", "All files (*.*)"),
-        )
-        if not result:
-            return {"ok": False, "error": "cancelled"}
-        try:
-            new_filename = self._ctrl.copy_condition_file(result[0])
-            self._ctrl.enable_condition_file(new_filename)
-            files = self._ctrl.list_condition_files()
-            entry = next((f for f in files if f["filename"] == new_filename), None)
-            return {"ok": True, "entry": entry}
-        except Exception as e:
-            return {"ok": False, "error": str(e)}
-
-    def save_condition(self, condition: dict) -> dict:
-        try:
-            new_filename = self._ctrl.save_condition(condition)
-            files = self._ctrl.list_condition_files()
-            entry = next((f for f in files if f["filename"] == new_filename), None)
-            return {"ok": True, "entry": entry}
-        except Exception as e:
-            return {"ok": False, "error": str(e)}
+    # Conditions feature removed — corresponding JS API methods deleted.
 
     # ------------------------------------------------------------------ #
     #  JS-callable: task files                                           #
@@ -245,10 +189,10 @@ class WebApp:
     # ------------------------------------------------------------------ #
 
     def get_trigger_options(self) -> list:
-        return [{"label": t[0], "register": t[1], "value": t[2]} for t in TRIGGER_OPTIONS]
+        return []
 
     def get_action_options(self) -> list:
-        return [{"label": a[0], "register": a[1], "value": a[2]} for a in ACTION_OPTIONS]
+        return []
 
     def get_register_names(self) -> dict:
         return {str(k): v for k, v in REGISTER_NAMES.items()}

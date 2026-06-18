@@ -13,8 +13,8 @@ PAUSED = const(3)
 TOLERANCE = const(20)
 TIMEOUT = const(15)
 
-VEL_OPEN = const(0)
-VEL_CLOSE = const(40)
+VEL_OPEN_DEFAULT = const(255)
+VEL_CLOSE_DEFAULT = const(40)
 
 TRQ_OPEN = const(50)
 TRQ_CLOSE = const(15)
@@ -50,6 +50,8 @@ class Door(Dynamixel):
         self._closed_pos = self.home_pos
         self.target_pos = self._closed_pos
         self.interlock = True
+        self.speed_open = VEL_OPEN_DEFAULT
+        self.speed_close = VEL_CLOSE_DEFAULT
 
     @property
     def status(self) -> int:
@@ -92,13 +94,13 @@ class Door(Dynamixel):
 
     def open(self):
         if self.status != OPEN:
-            self.speed = VEL_OPEN
+            self.speed = self.speed_open
             self.torque = TRQ_OPEN
             self.move(self.open_pos)
 
     def close(self):
         if self.status != CLOSE:
-            self.speed = VEL_CLOSE
+            self.speed = self.speed_close
             self.torque = TRQ_CLOSE
             self.move(self.home_pos)
 

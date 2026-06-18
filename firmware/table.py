@@ -21,7 +21,7 @@ class Table(Dynamixel):
         self.torque_enabled = False  # Disable torque initially
         self.operating_mode = 5  # Current-based Position Control Mode
         self.current_limit = TRQ_DEFAULT
-        self.profile_velocity = VEL_DEFAULT
+        self.speed = VEL_DEFAULT
         
         self.target_pos = self.present_position
         self._task = None
@@ -32,6 +32,16 @@ class Table(Dynamixel):
         if self._ismoving:
             return 0x01
         return 0
+
+    @property
+    def speed(self):
+        return self.profile_velocity
+
+    @speed.setter
+    def speed(self, vel):
+        self.torque_enabled = False
+        self.profile_velocity = vel
+        self.torque_enabled = True
 
     @property
     def ismoving(self):

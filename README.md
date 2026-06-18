@@ -59,17 +59,20 @@ python main.py
 
 #### Door
 
-| Register     | Address | Type | Description                                                    |
-| ------------ | ------- | ---- | -------------------------------------------------------------- |
-| Door Status  | `0x10`  | `R`  | `0x00`: closed, `0x01`: opened, `0x02`: moving, `0x03`: paused |
-| Door Command | `0x11`  | `W`  | `0x00`: open, `0x01`: close, `0x02`: stop                      |
+| Register         | Address | Type  | Description                                                    |
+| ---------------- | ------- | ----- | -------------------------------------------------------------- |
+| Door Status      | `0x10`  | `R`   | `0x00`: closed, `0x01`: opened, `0x02`: moving, `0x03`: paused |
+| Door Command     | `0x11`  | `W`   | `0x00`: open, `0x01`: close, `0x02`: stop                      |
+| Door Open Speed  | `0x12`  | `R/W` | 0-255: open speed (higher = faster)                            |
+| Door Close Speed | `0x13`  | `R/W` | 0-255: close speed (higher = faster)                           |
 
 #### Table
 
-| Register      | Address | Type | Description                                                                  |
-| ------------- | ------- | ---- | ---------------------------------------------------------------------------- |
-| Table Status  | `0x18`  | `R`  | `0x00`: stopped, `0x01`: moving                                              |
-| Table Command | `0x19`  | `W`  | bit 7: direction (`0` = CW, `1` = CCW), bits 0–6: position in 1/8-turn units |
+| Register      | Address | Type  | Description                                                                  |
+| ------------- | ------- | ----- | ---------------------------------------------------------------------------- |
+| Table Status  | `0x18`  | `R`   | `0x00`: stopped, `0x01`: moving                                              |
+| Table Command | `0x19`  | `W`   | bit 7: direction (`0` = CW, `1` = CCW), bits 0–6: position in 1/8-turn units |
+| Table Speed   | `0x1A`  | `R/W` | 0-255: table movement speed value                                            |
 
 #### Side Sensors
 
@@ -92,6 +95,13 @@ python main.py
 | ----------- | ------- | ---- | ------------------- |
 | Cam A State | `0x04`  | `R`  | Current Cam A state |
 | Cam B State | `0x05`  | `R`  | Current Cam B state |
+
+#### Buzzer
+
+| Register      | Address | Type  | Description                                              |
+| ------------- | ------- | ----- | -------------------------------------------------------- |
+| Buzzer Enable | `0x30`  | `R/W` | `0x00`: disabled, `0x01`: enabled                        |
+| Buzzer Freq   | `0x31`  | `R/W` | Frequency value for buzzer (Hz or device-specific units) |
 
 ### TX Protocol (Host → Device)
 

@@ -27,8 +27,6 @@ from pathlib import Path
 from protocol import (
     REGISTER_NAMES,
     READABLE_REGISTERS,
-    TRIGGER_OPTIONS,
-    ACTION_OPTIONS,
     REG_LED_SYNC,
     REG_DOOR_SENSOR,
     REG_TABLE_SENSOR,
@@ -48,13 +46,11 @@ from protocol import (
 )
 from serial_comm import DeviceConnection, list_serial_ports
 from csv_logger import CsvLogger
-from conditions import ConditionEngine, Condition, trigger_from_dict
+ 
 
 
 _BASE = Path(__file__).resolve().parent
-_CONDITIONS_DIR = _BASE / ".conditions"
 _TASKS_DIR = _BASE / ".task"
-_LEGACY_JSON = _BASE / "conditions.json"
 
 
 def _safe_filename(name: str) -> str:
@@ -83,20 +79,8 @@ class Controller:
         self._log_cbs: list = []
         self._task_status_cbs: list = []
 
-        # Ensure folders exist
-        _CONDITIONS_DIR.mkdir(exist_ok=True)
+        # Ensure tasks folder exists
         _TASKS_DIR.mkdir(exist_ok=True)
-
-        # Condition engine
-        self._condition_engine = ConditionEngine(self._condition_send)
-        self._condition_engine.on_action(self._on_condition_action)
-        self._condition_engine.start()
-
-        # Migrate legacy conditions.json → individual files
-        self._migrate_legacy_conditions()
-
-        # Load enabled conditions from .conditions/
-        self._load_all_condition_files()
 
     # ------------------------------------------------------------------ #
     #  Callback registration                                             #
@@ -274,13 +258,11 @@ class Controller:
 
     def _handle_event(self, register: int, value: int):
         self._logger.log_rx(register, MSG_EVENT, value)
-        self._condition_engine.push_event(register, value)
         self._fire(self._event_cbs, register, value,
                    format_value(register, value), reg_name(register))
 
     def _handle_ack(self, register: int, value: int):
         self._logger.log_rx(register, MSG_ACK, value)
-        self._condition_engine.push_event(register, value)
         self._fire(self._ack_cbs, register, value, format_value(register, value))
 
     def _handle_tx(self, register: int, msg_type: int, value: int):
@@ -290,163 +272,8 @@ class Controller:
     def _handle_error(self, message: str):
         self._fire(self._error_cbs, message)
 
-    def _on_condition_action(self, condition):
-        self._log(f"Condition fired: {condition.name!r}")
-
-    def _condition_send(self, register: int, value: int):
-        if self.is_connected:
-            try:
-                self._conn.write_register(register, value)
-            except Exception:
-                pass
-
-    # ------------------------------------------------------------------ #
-    #  Conditions — file management                                      #
-    # ------------------------------------------------------------------ #
-
-    def _migrate_legacy_conditions(self):
-        """Split a monolithic conditions.json into individual files (one-time)."""
-        if not _LEGACY_JSON.is_file():
-            return
-        try:
-            data = json.loads(_LEGACY_JSON.read_text(encoding="utf-8"))
-        except Exception:
-            return
-        if not isinstance(data, list) or not data:
-            return
-        for item in data:
-            stem = _safe_filename(item.get("name", "condition"))
-            dest = _CONDITIONS_DIR / f"{stem}.json"
-            counter = 1
-            while dest.exists():
-                dest = _CONDITIONS_DIR / f"{stem}_{counter}.json"
-                counter += 1
-            dest.write_text(json.dumps(item, indent=2), encoding="utf-8")
-        bak = _LEGACY_JSON.with_suffix(".json.bak")
-        _LEGACY_JSON.rename(bak)
-        self._log(f"Migrated {len(data)} condition(s) to {_CONDITIONS_DIR.name}/")
-
-    def _load_all_condition_files(self):
-        """Load all enabled conditions from .conditions/ into the engine."""
-        for path in sorted(_CONDITIONS_DIR.glob("*.json")):
-            try:
-                data = json.loads(path.read_text(encoding="utf-8"))
-                if data.get("enabled", True):
-                    cond = Condition.from_dict(data)
-                    cond.enabled = True
-                    self._condition_engine.add_condition(cond)
-            except Exception as e:
-                self._log(f"Failed to load {path.name}: {e}")
-
-    def list_condition_files(self) -> list[dict]:
-        """Return metadata for every .json file in .conditions/."""
-        result = []
-        for path in sorted(_CONDITIONS_DIR.glob("*.json")):
-            try:
-                data = json.loads(path.read_text(encoding="utf-8"))
-                action_text = (
-                    f"reg 0x{data.get('action_register', 0):02X} = "
-                    f"0x{data.get('action_value', 0):02X}"
-                )
-                for a in ACTION_OPTIONS:
-                    if (a[1] == data.get("action_register") and
-                            a[2] == data.get("action_value")):
-                        action_text = a[0]
-                        break
-                trig_desc = ""
-                try:
-                    trig_desc = trigger_from_dict(data["trigger"]).describe()
-                except Exception:
-                    pass
-                result.append({
-                    "filename": path.name,
-                    "name": data.get("name", path.stem),
-                    "trigger_desc": trig_desc,
-                    "action_text": action_text,
-                    "enabled": bool(data.get("enabled", True)),
-                })
-            except Exception:
-                result.append({
-                    "filename": path.name,
-                    "name": path.stem,
-                    "trigger_desc": "",
-                    "action_text": "",
-                    "enabled": False,
-                })
-        return result
-
-    def _set_condition_file_enabled(self, filename: str, enabled: bool):
-        """Update the enabled flag in the file and sync the engine."""
-        path = _CONDITIONS_DIR / Path(filename).name
-        if not path.is_file():
-            raise FileNotFoundError(f"{filename} not found.")
-        data = json.loads(path.read_text(encoding="utf-8"))
-        data["enabled"] = enabled
-        path.write_text(json.dumps(data, indent=2), encoding="utf-8")
-
-        # Rebuild engine state for this condition
-        name = data.get("name", path.stem)
-        with self._condition_engine._lock:
-            # Remove any existing instance of this condition by name
-            self._condition_engine._conditions = [
-                c for c in self._condition_engine._conditions if c.name != name
-            ]
-            if enabled:
-                cond = Condition.from_dict(data)
-                cond.enabled = True
-                self._condition_engine._conditions.append(cond)
-
-    def enable_condition_file(self, filename: str):
-        self._set_condition_file_enabled(filename, True)
-
-    def disable_condition_file(self, filename: str):
-        self._set_condition_file_enabled(filename, False)
-
-    def delete_condition_file(self, filename: str):
-        path = _CONDITIONS_DIR / Path(filename).name
-        if not path.is_file():
-            raise FileNotFoundError(f"{filename} not found.")
-        data = {}
-        try:
-            data = json.loads(path.read_text(encoding="utf-8"))
-        except Exception:
-            pass
-        name = data.get("name", path.stem)
-        with self._condition_engine._lock:
-            self._condition_engine._conditions = [
-                c for c in self._condition_engine._conditions if c.name != name
-            ]
-        path.unlink()
-
-    def copy_condition_file(self, src_path: str) -> str:
-        """Copy a .json file into .conditions/. Returns the new filename."""
-        src = Path(src_path)
-        dest = _CONDITIONS_DIR / src.name
-        counter = 1
-        while dest.exists():
-            dest = _CONDITIONS_DIR / f"{src.stem}_{counter}{src.suffix}"
-            counter += 1
-        shutil.copy2(src, dest)
-        return dest.name
-
-    def save_condition(self, data: dict) -> str:
-        """Save a condition from the GUI into .conditions/ and activate it."""
-        cond = Condition.from_dict(data)
-        stem = _safe_filename(cond.name)
-        filename = f"{stem}.json"
-        dest = _CONDITIONS_DIR / filename
-        counter = 1
-        while dest.exists():
-            filename = f"{stem}_{counter}.json"
-            dest = _CONDITIONS_DIR / filename
-            counter += 1
-
-        dest.write_text(json.dumps(data, indent=2), encoding="utf-8")
-
-        if data.get("enabled", True):
-            self._condition_engine.add_condition(cond)
-
-        return dest.name
+    # Conditions feature removed — related file management and engine
+    # have been deleted as part of feature removal.
 
     # ------------------------------------------------------------------ #
     #  Tasks — file management                                           #
@@ -515,5 +342,4 @@ class Controller:
 
     def shutdown(self):
         self.disconnect()
-        self._condition_engine.stop()
         self._logger.close()

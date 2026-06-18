@@ -3,7 +3,7 @@ from utility import EventPin
 from poke import Poke
 from door import Door, RAT_SETTING, MICE_SETTING
 from table import Table
-
+from buzzer import BUZZER
 
 UART_BAUD = 1_000_000  # Baud rate for hardware UART
 UART_NUM = 0  # Use UART0
@@ -12,6 +12,8 @@ INDICATOR_PIN = 25  # GPIO for indicator LED
 portA = Poke(valve_pin=0, led_pin=3, beambreak_pin=12)
 portB = Poke(valve_pin=1, led_pin=4, beambreak_pin=13)
 portC = Poke(valve_pin=2, led_pin=5, beambreak_pin=14)
+
+buzzer = BUZZER(pin=7)
 
 camA = EventPin(8, Pin.IN, Pin.PULL_UP)
 camB = EventPin(9, Pin.IN, Pin.PULL_UP)

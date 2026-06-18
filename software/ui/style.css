@@ -44,6 +44,10 @@ button {
 }
 button:hover { background: var(--accent-h); }
 button:disabled { background: #444; color: #666; cursor: default; }
+button:focus { outline: none; box-shadow: none; }
+
+/* Remove visible button borders for secondary/danger variants too */
+.btn-secondary, .btn-danger { border: none; box-shadow: none; }
 
 select, input[type="text"], input[type="number"] {
   background: var(--surface2);
@@ -85,7 +89,7 @@ label { display: flex; align-items: center; gap: 6px; }
   display: flex; align-items: center; gap: 8px;
   padding: 6px 10px;
   background: var(--surface);
-  border-bottom: 1px solid var(--border);
+  border-bottom: none;
   flex-shrink: 0;
 }
 #conn-bar label { font-size: 12px; }
@@ -98,12 +102,11 @@ label { display: flex; align-items: center; gap: 6px; }
 /* ── Main split ──────────────────────────────────────────────── */
 #main {
   display: grid;
-  grid-template-columns: minmax(320px, 1fr) 10px minmax(380px, 1.4fr);
-  grid-template-rows: var(--top-row-height, 1fr) 10px auto;
+  grid-template-columns: var(--panel-left-width, minmax(320px, 7fr)) 10px minmax(380px, 3fr);
+  grid-template-rows: var(--top-row-height, 1fr) 10px;
   grid-template-areas:
     "command resizer task"
-    "rowresizer rowresizer rowresizer"
-    "condition condition condition";
+    "rowresizer rowresizer rowresizer";
   gap: 6px;
   padding: 6px;
   flex: 1;
@@ -114,8 +117,8 @@ label { display: flex; align-items: center; gap: 6px; }
 
 #left-panel { grid-area: command; }
 #panel-resizer { grid-area: resizer; }
-#condition-panel { grid-area: condition; }
-#row-resizer { grid-area: rowresizer; }
+#condition-panel { display: none; }
+#row-resizer { display: none; }
 #task-panel { grid-area: task; }
 
 .panel-resizer {
@@ -169,7 +172,7 @@ label { display: flex; align-items: center; gap: 6px; }
 .panel-title {
   font-weight: 700; font-size: 13px;
   padding: 8px 12px 4px;
-  border-bottom: 1px solid var(--border);
+  border-bottom: none;
   flex-shrink: 0;
 }
 .panel-body { padding: 8px; overflow-y: auto; flex: 1; }
@@ -203,63 +206,13 @@ label { display: flex; align-items: center; gap: 6px; }
 
 /* ── File-list tables (conditions + tasks) ───────────────────── */
 .file-table-wrap { flex: 1; overflow-y: auto; min-height: 0; }
-.condition-builder {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-bottom: 10px;
-  padding: 8px;
-  background: #252a2d;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-}
-.builder-row, .builder-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-}
-.builder-row-wrap { justify-content: space-between; }
-.cond-group {
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 10px;
-  background: var(--surface2);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.group-header {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items: center;
-  justify-content: space-between;
-}
-.group-header label { display: flex; align-items: center; gap: 6px; min-width: 180px; }
-.cond-trigger-rows { display: flex; flex-direction: column; gap: 8px; }
-.cond-trigger-row {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-.cond-trigger-row select { min-width: 220px; }
-.cond-trigger-row button { flex-shrink: 0; }
-.btn-cond-add-trigger, .btn-cond-remove-group {
-  background: var(--surface3);
-  color: var(--text);
-}
-.btn-cond-remove-group { background: #8b1a1a; }
-.builder-actions label { flex: 1; min-width: 220px; }
-
-button#btn-cond-create { background: var(--green); }
+/* Condition-related builder styles removed */
 
 table { width: 100%; border-collapse: collapse; font-size: 12px; }
 thead th {
   background: var(--surface3); text-align: left;
   padding: 6px 8px; font-size: 11px; font-weight: 700;
-  border-bottom: 2px solid var(--border);
+  border-bottom: none;
   position: sticky; top: 0; z-index: 1;
 }
 tbody tr { cursor: pointer; }
@@ -308,28 +261,15 @@ tbody td { padding: 5px 8px; }
 .badge-error   { background: #8b1a1a; color: #f44747; }
 
 /* ── Event log ───────────────────────────────────────────────── */
-#log-resizer {
-  width: 100%;
-  height: 8px;
-  cursor: row-resize;
-  background: rgba(255,255,255,0.10);
-  position: relative;
-}
-#log-resizer::before {
-  content: '';
-  position: absolute;
-  left: 50%; top: 50%;
-  transform: translate(-50%, -50%);
-  width: 40px;
-  height: 2px;
-  background: rgba(255,255,255,0.25);
-}
+/* log-resizer element removed from DOM; no styles needed */
 #log-bar {
   background: var(--surface);
-  border-top: 1px solid var(--border);
+  /* border-top removed to avoid double border with top panels; row resizer provides separation */
+  border-top: none;
   display: flex;
   flex-direction: column;
   height: var(--log-height, 240px);
+  max-height: 50vh;
   transition: height 0.2s ease;
   overflow: hidden;
   flex: none;
@@ -338,10 +278,85 @@ tbody td { padding: 5px 8px; }
   height: auto;
 }
 #log-bar .panel-title {
-  border-bottom: 1px solid var(--border);
+  border-bottom: none;
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+/* Integrate top panel border with the log panel via the row resizer */
+/* row-resizer removed */
+
+/* Shared border removed as requested */
+#log-bar:not(.log-collapsed) {
+  border-top: none;
+}
+
+/* Responsive behavior: adjust log height relative to viewport and panels */
+@media (max-width: 1040px) {
+  #log-bar:not(.log-collapsed) {
+    height: min(240px, 35vh);
+  }
+}
+
+/* Log grabber (top of log) — visible when log open; allows resizing only the log */
+#log-grabber {
+  display: none;
+  width: 100%;
+  height: 10px;
+  cursor: row-resize;
+  background: rgba(255,255,255,0.04);
+  position: relative;
+}
+#log-grabber::before {
+  content: '';
+  position: absolute;
+  left: 50%; top: 50%; transform: translate(-50%, -50%);
+  width: 40px; height: 2px; background: rgba(255,255,255,0.18);
+}
+#log-bar:not(.log-collapsed) #log-grabber { display: block; }
+
+@media (max-width: 600px) {
+  /* On very small screens, make log overlay full-width and use viewport height */
+  #log-bar:not(.log-collapsed) {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    width: 100%;
+    z-index: 90;
+    height: 40vh;
+    border-top: 1px solid var(--border);
+    box-shadow: 0 -6px 18px rgba(0,0,0,0.6);
+  }
+  /* Dim background interaction when log overlays */
+  body {
+    --bg-dim: rgba(0,0,0,0.08);
+  }
+}
+
+/* Remove top border from top-row panels so the row resizer looks like the single separator */
+#left-panel .panel-title,
+#task-panel .panel-title {
+  border-bottom: none;
+}
+
+/* Make range inputs responsive (RWD) */
+input[type="range"] {
+  width: 100%;
+  min-width: 0;
+}
+
+/* Ensure numeric displays beside sliders don't force overflow */
+.card-row2 span[id$="-val"] {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 40px;
+  text-align: right;
+}
+
+@media (max-width: 600px) {
+  /* Stack controls on small screens for better responsiveness */
+  .card-row2 { flex-direction: column; align-items: stretch; }
+  .card-row2 label { width: 100%; }
 }
 #log-bar .btn-toggle-log {
   margin-left: auto;
