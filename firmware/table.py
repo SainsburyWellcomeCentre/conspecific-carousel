@@ -74,9 +74,12 @@ class Table(Dynamixel):
     
         self._disable()
 
+        await asyncio.sleep_ms(2000) # little pause to ensure the motor has fully stopped before disabling torque
+        self.torque_enabled = False
+
     def _disable(self):
         self._ismoving = False
-        self.torque_enabled = False
+        # self.torque_enabled = False
         self.isr.set()
 
     def _enable(self):

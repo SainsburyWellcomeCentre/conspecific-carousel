@@ -1,4 +1,4 @@
-from settings import portA, portB, portC, led, door, table, camA, camB, snsr_door, snsr_table, sync_out, buzzer
+from hardware import portA, portB, portC, led, door, table, camA, camB, snsr_door, snsr_table, sync_out, buzzer
 
 import asyncio
 from utility import WaitAny

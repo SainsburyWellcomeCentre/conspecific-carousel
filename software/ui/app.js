@@ -201,6 +201,8 @@ function _initLogToggle() {
     if (!collapsed) {
       adjustTopForLog();
     } else {
+  
+  
       // restore default top row behaviour when log is hidden
       document.documentElement.style.removeProperty('--top-row-height');
     }
