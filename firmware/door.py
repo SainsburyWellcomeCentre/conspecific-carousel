@@ -11,19 +11,18 @@ MOVING = const(2)
 PAUSED = const(3)
 
 TOLERANCE = const(20)
-TIMEOUT = const(15)
 
 VEL_OPEN_DEFAULT = const(255)
-VEL_CLOSE_DEFAULT = const(40)
+VEL_CLOSE_DEFAULT = const(0)
 
 TRQ_OPEN_RAT = const(50)
 TRQ_CLOSE_RAT = const(15)
 
-TRQ_OPEN_MICE = const(150)
-TRQ_CLOSE_MICE = const(45)
+TRQ_OPEN_MICE = const(550)
+TRQ_CLOSE_MICE = const(350)
 
 LENGTH_RAT = const(6000)  # Default length in encoder units
-LENGTH_MICE = const(4100)  # Default length in encoder units
+LENGTH_MICE = const(4400)  # Default length in encoder units
 
 
 class Door(Dynamixel):
@@ -39,7 +38,7 @@ class Door(Dynamixel):
         self._task = None
         self.open_pos = 0
         self.home_pos = 0
-        self.speed = 0
+        self.speed = 10
         self.torque = 0
         self.speed_open = VEL_OPEN_DEFAULT
         self.speed_close = VEL_CLOSE_DEFAULT
@@ -66,12 +65,12 @@ class Door(Dynamixel):
 
     @property
     def speed(self):
-        return self.profile_velocity
+        return self.profile_velocity - 40
 
     @speed.setter
     def speed(self, vel):
         self.torque_enabled = False
-        self.profile_velocity = vel
+        self.profile_velocity = vel + 40
         self.torque_enabled = True
 
     # @property
@@ -144,18 +143,21 @@ class Door(Dynamixel):
         self.torque_enabled = True
         self.goal_extend_position = self.home_pos
         last_pos = self.present_position
-        time.sleep(1)
+        time.sleep(2.5)  # Wait for the motor to initialise and start moving
         conuter = 0
         while True:
             pos = self.present_position
             if abs(last_pos - pos) < TOLERANCE:  # Check if the motor is close to the home position
                 conuter += 1
+            else:
+                conuter = 0
             if conuter > 10:
                 break
             last_pos = pos
-            time.sleep(0.1)
+            time.sleep(0.2)
         self.home_pos = self.present_position
         self.torque_enabled = False
+        # time.sleep(1)
         
 
 
@@ -166,6 +168,7 @@ class RatDoor(Door):
         self.home_pos = self.present_position - LENGTH_RAT
         self.torque = TRQ_CLOSE_RAT
         self._calibrate_home()
+        self.home_pos += 20
         self.open_pos = self.home_pos + LENGTH_RAT
         self.target_pos = self.home_pos
 
@@ -181,9 +184,10 @@ class MiceDoor(Door):
     def __init__(self, uart: UART):
         super().__init__(uart, model=DynamixelModel.XC330_T181)
         
-        self.home_pos = self.present_position - LENGTH_MICE
-        self.torque = TRQ_CLOSE_MICE + 20
+        self.home_pos = self.present_position - LENGTH_MICE - 2000
+        self.torque = TRQ_CLOSE_MICE
         self._calibrate_home()
+        self.home_pos += 50
         self.open_pos = self.home_pos + LENGTH_MICE
         self.target_pos = self.home_pos
 

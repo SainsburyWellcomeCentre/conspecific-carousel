@@ -11,6 +11,8 @@ ONE_EIGHTH = const(2048)
 VEL_DEFAULT = const(40)
 TRQ_DEFAULT = const(500)
 
+P_GAIN = const(50)
+
 class Table(Dynamixel):
 
     def __init__(self, uart: UART):
@@ -22,7 +24,7 @@ class Table(Dynamixel):
         self.operating_mode = 5  # Current-based Position Control Mode
         self.current_limit = TRQ_DEFAULT
         self.speed = VEL_DEFAULT
-        
+        self.position_p_gain = P_GAIN
         self.target_pos = self.present_position
         self._task = None
         self._ismoving = False
@@ -39,9 +41,10 @@ class Table(Dynamixel):
 
     @speed.setter
     def speed(self, vel):
+        temp = self.torque_enabled
         self.torque_enabled = False
         self.profile_velocity = vel
-        self.torque_enabled = True
+        self.torque_enabled = temp
 
     @property
     def ismoving(self):

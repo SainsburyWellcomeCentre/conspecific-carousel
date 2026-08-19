@@ -29,11 +29,23 @@ View the complete electronic design project online via [Altium 365 Viewer](https
 3. **Connect Sensors** - Wire beambreak arrays to nose poke ports and position sensors to door/table
 4. **Power Up** - Connect 12V power supply for motors and USB for control/communication
 
-### Firmware Installation
+### Firmware installation
 
-1. **Enter bootloader mode** - Hold BOOTSEL button while connecting USB
-2. **Copy firmware** - Transfer all files from `firmware/` folder to the device
-3. **Verify** - Device should appear as USB serial port and respond to commands
+1. **Flash MicroPython** — download the latest RP2354 MicroPython UF2 from [micropython.org](https://micropython.org/download/RPI_PICO2/) and copy it to the board while holding BOOTSEL.
+2. **Install mpremote** — `pip install mpremote`
+3. **Copy firmware files** — from the `firmware/` directory, copy everything to the board:
+
+   ```bash
+   mpremote cp -r firmware/. :
+   ```
+
+4. **Install dependencies** — run the following commands to install the required libraries from GitHub:
+
+   ```bash
+   mpremote mip install github:SainsburyWellcomeCentre/micropython-dynamixel
+   ```
+
+5. **Reset the board** — the device will enumerate as a USB CDC serial port and announce itself.
 
 ### Desktop App Control
 
